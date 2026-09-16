@@ -1,0 +1,45 @@
+name: Bug report
+description: Report a reproducible integration problem
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        This project is unofficial community software. Do not contact Crestron
+        support about this integration. Remove passwords, cookies, serial
+        numbers, MAC addresses, hostnames, and IP addresses from attachments.
+  - type: input
+    id: model
+    attributes:
+      label: DM NVX model
+    validations:
+      required: true
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware version
+    validations:
+      required: true
+  - type: input
+    id: ha
+    attributes:
+      label: Home Assistant version
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Redacted diagnostics and logs
+      render: text
+

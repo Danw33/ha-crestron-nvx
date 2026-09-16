@@ -1,0 +1,87 @@
+{
+  "title": "Crestron DM NVX",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to a DM NVX endpoint",
+        "description": "Enter the local endpoint credentials. This integration currently performs read-only requests.",
+        "data": {
+          "host": "Host name or IP address",
+          "username": "Username",
+          "password": "Password",
+          "verify_ssl": "Verify TLS certificate"
+        },
+        "data_description": {
+          "verify_ssl": "Certificate verification is disabled by default because DM NVX endpoints commonly use self-signed certificates. When disabled, Home Assistant cannot verify the endpoint's identity; use this only on a trusted local network. Enable verification when Home Assistant trusts the endpoint certificate."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update DM NVX credentials",
+        "data": {
+          "username": "Username",
+          "password": "Password"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure DM NVX endpoint",
+        "data": {
+          "host": "Host name or IP address",
+          "username": "Username",
+          "password": "Password",
+          "verify_ssl": "Verify TLS certificate"
+        },
+        "data_description": {
+          "verify_ssl": "Certificate verification is disabled by default because DM NVX endpoints commonly use self-signed certificates. When disabled, Home Assistant cannot verify the endpoint's identity; use this only on a trusted local network. Enable verification when Home Assistant trusts the endpoint certificate."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect",
+      "invalid_auth": "Invalid authentication",
+      "invalid_host": "Enter a valid host name or IP address",
+      "invalid_response": "The endpoint returned an unsupported response",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This endpoint is already configured",
+      "reauth_successful": "Authentication updated",
+      "reconfigure_successful": "Configuration updated",
+      "wrong_device": "The address belongs to a different endpoint"
+    }
+  },
+  "entity": {
+    "sensor": {
+      "device_mode": {"name": "Device mode"},
+      "firmware_version": {"name": "Firmware version"},
+      "reboot_reason": {"name": "Last reboot reason"},
+      "active_video_source": {"name": "Active video source"},
+      "active_audio_source": {"name": "Active audio source"},
+      "video_source": {"name": "Configured video source"},
+      "audio_source": {"name": "Configured audio source"},
+      "audio_mode": {"name": "Audio mode"},
+      "nax_active_audio_source": {"name": "Active NAX audio source"},
+      "nax_audio_source": {"name": "Configured NAX audio source"},
+      "input_resolution": {"name": "{port_name} input resolution"},
+      "output_resolution": {"name": "{port_name} output resolution"},
+      "receive_stream_status": {"name": "Receive stream {stream_number} status"},
+      "receive_stream_resolution": {"name": "Receive stream {stream_number} resolution"},
+      "receive_stream_bitrate": {"name": "Receive stream {stream_number} bitrate"},
+      "transmit_stream_status": {"name": "Transmit stream {stream_number} status"},
+      "transmit_stream_resolution": {"name": "Transmit stream {stream_number} resolution"},
+      "transmit_stream_bitrate": {"name": "Transmit stream {stream_number} bitrate"}
+    },
+    "binary_sensor": {
+      "device_ready": {"name": "Device ready"},
+      "auto_initiation_mode": {"name": "Auto initiation mode"},
+      "auto_input_routing_enabled": {"name": "Auto input routing"},
+      "front_panel_lockout_enabled": {"name": "Front panel lockout"},
+      "leds_enabled": {"name": "LEDs"},
+      "show_setup_information_on_osd": {"name": "Setup information on OSD"},
+      "input_sync": {"name": "{port_name} input sync"},
+      "output_connected": {"name": "{port_name} output connected"},
+      "output_transmitting": {"name": "{port_name} output transmitting"},
+      "receive_stream_codec_ready": {"name": "Receive stream {stream_number} codec ready"},
+      "transmit_stream_codec_ready": {"name": "Transmit stream {stream_number} codec ready"}
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "domain": "crestron_nvx",
+  "name": "Crestron DM NVX",
+  "version": "0.1.0",
+  "config_flow": true,
+  "codeowners": ["@Danw33"],
+  "documentation": "https://github.com/Danw33/ha-crestron-nvx",
+  "issue_tracker": "https://github.com/Danw33/ha-crestron-nvx/issues",
+  "integration_type": "device",
+  "iot_class": "local_polling",
+  "requirements": ["crestron-nvx==0.1.0"]
+}
