@@ -32,6 +32,8 @@ and intends to use semantic versioning after its first release.
   entities on a real firmware 7.1 DM-NVX-360.
 - Bounded JSON response reads and endpoint-controlled entity collections.
 - Full config-flow helper coverage and privacy regression tests for the probe.
+- Original generic AV-over-IP brand icon for HACS installations.
+- Immutable commit targeting for HACS pull-request validation.
 
 ### Security
 
