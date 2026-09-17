@@ -3,6 +3,7 @@
 [![CI](https://github.com/Danw33/ha-crestron-nvx/actions/workflows/ci.yml/badge.svg)](https://github.com/Danw33/ha-crestron-nvx/actions/workflows/ci.yml)
 [![Home Assistant validation](https://github.com/Danw33/ha-crestron-nvx/actions/workflows/validate.yml/badge.svg)](https://github.com/Danw33/ha-crestron-nvx/actions/workflows/validate.yml)
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+![Python Version from PEP 621 TOML](https://img.shields.io/python/required-version-toml?tomlFilePath=https%3A%2F%2Fraw.githubusercontent.com%2FDanw33%2Fha-crestron-nvx%2Frefs%2Fheads%2Fmain%2Fpyproject.toml)
 
 An early-stage custom integration for direct, local monitoring of Crestron
 DM NVX AV-over-IP endpoints. The initial supported devices are DM-NVX-350,
