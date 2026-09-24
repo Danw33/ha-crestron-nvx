@@ -43,7 +43,10 @@ project's documentation, hardware-observation, and fixture rules.
 
 ## Project status
 
-The repository is a functional, read-only foundation, not yet a user release.
+Version 0.1.0 is released and has been used successfully through HACS.
+Version 0.2.0 adds optional previews, validated on a firmware 7.1 DM-NVX-360
+in the entity view, HA Media, and remotely through the HA iOS app. Preview
+updates work without additional configuration; other models remain to be tested.
 It currently:
 
 - configures one physical endpoint per Home Assistant config entry;
@@ -56,7 +59,7 @@ It currently:
   those fields are present;
 - provides redacted diagnostics, reauthentication, reconfiguration, and clean
   config-entry unloading;
-- reserves an empty image platform for a later preview-image entity.
+- exposes a preview image only when the API reports preview capability.
 
 There are deliberately no write/control operations. No reboot, routing, mode,
 input, stream, or device-configuration command can be sent by this version.
@@ -65,7 +68,7 @@ input, stream, or device-configuration command can be sent by this version.
 
 1. Complete Phase 1 status coverage using sanitized observations from each
    target model, including stream, input-sync, and output-sync state.
-2. Add a Home Assistant image entity for supported preview JPEGs.
+2. Validate the 0.2.0 optional preview image entity on physical hardware.
 3. Design separately reviewed, explicitly guarded control entities/actions.
 4. Add stream-to-endpoint selection with a Home Assistant-native UX.
 
@@ -91,9 +94,12 @@ A disposable ZIP can also be built for testing before publication. See
 
 ### HACS
 
-HACS installation will be available after the repository has a public GitHub
-release. Until then, advanced testers can add the GitHub repository as a custom
-HACS integration repository.
+[![Open this repository in HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=Danw33&repository=ha-crestron-nvx&category=integration)
+
+Requires HACS to be installed in your Home Assistant instance.
+
+Add `Danw33/ha-crestron-nvx` as a custom HACS repository of type Integration,
+download, restart Home Assistant, and add it through Devices & services.
 
 ## Configuration
 
@@ -163,7 +169,8 @@ manuals, schemas, examples, firmware, or other proprietary materials.
   certificates commonly installed on DM NVX endpoints. Without verification,
   an on-path device could impersonate the endpoint and receive its credentials;
   use this mode only on a trusted, isolated local network.
-- Automatic discovery and preview images are not implemented.
+- Automatic discovery is not implemented. Preview availability is determined
+  from capabilities, not an assumed firmware threshold.
 - Long polling/WebSocket telemetry is deferred until polling behaviour is
   understood on the target firmware.
 - No device control is implemented.

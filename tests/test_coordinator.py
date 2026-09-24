@@ -6,6 +6,7 @@ import pytest
 from crestron_nvx import (
     NvxAuthenticationError,
     NvxConnectionError,
+    NvxPreviewInfo,
     NvxResponseError,
 )
 from homeassistant.core import HomeAssistant
@@ -23,7 +24,10 @@ async def test_update_success(
 ) -> None:
     """Return a typed snapshot from the client."""
 
-    client = MagicMock(async_get_snapshot=AsyncMock(return_value=SNAPSHOT))
+    client = MagicMock(
+        async_get_snapshot=AsyncMock(return_value=SNAPSHOT),
+        async_get_preview_info=AsyncMock(return_value=NvxPreviewInfo()),
+    )
     coordinator = CrestronNvxCoordinator(hass, mock_config_entry, client)
     assert await coordinator._async_update_data() == SNAPSHOT
 

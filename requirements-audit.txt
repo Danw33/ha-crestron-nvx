@@ -1,2 +1,2 @@
 # Keep synchronized with custom_components/crestron_nvx/manifest.json.
-crestron-nvx==0.1.0
+crestron-nvx==0.2.0

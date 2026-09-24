@@ -4,7 +4,13 @@ from collections.abc import Generator
 from unittest.mock import AsyncMock, patch
 
 import pytest
-from crestron_nvx import NvxAvPort, NvxDeviceInfo, NvxSnapshot, NvxStream
+from crestron_nvx import (
+    NvxAvPort,
+    NvxDeviceInfo,
+    NvxPreviewInfo,
+    NvxSnapshot,
+    NvxStream,
+)
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -120,8 +126,14 @@ def mock_config_entry(hass: HomeAssistant) -> MockConfigEntry:
 def mock_client() -> Generator[AsyncMock]:
     """Mock all endpoint I/O."""
 
-    with patch(
-        "custom_components.crestron_nvx.NvxClient.async_get_snapshot",
-        new=AsyncMock(return_value=SNAPSHOT),
-    ) as client:
+    with (
+        patch(
+            "crestron_nvx.NvxClient.async_get_preview_info",
+            new=AsyncMock(return_value=NvxPreviewInfo()),
+        ),
+        patch(
+            "custom_components.crestron_nvx.NvxClient.async_get_snapshot",
+            new=AsyncMock(return_value=SNAPSHOT),
+        ) as client,
+    ):
         yield client

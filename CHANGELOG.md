@@ -5,6 +5,22 @@ and intends to use semantic versioning after its first release.
 
 ## [Unreleased]
 
+## [0.2.0]
+
+### Added
+
+- Capability-driven image entity using the crestron-nvx 0.2.0 client.
+- Bounded authenticated JPEG retrieval, 30-second caching and failure throttling.
+- Preview failures isolated from sensors; dynamic capability discovery.
+- Opt-in `--preview` probe and pre-release hardware checklist.
+- Firmware 1 DM-NVX-350 API-shape evidence; HA testing pending.
+- Largest-first preview selection and case-insensitive local-hosting detection.
+- Self-contained private test ZIP builder; release artifacts retain the PyPI dependency.
+- DM-NVX-360 firmware 7.1 preview display, updates, Media and remote iOS
+  viewing confirmed by the user.
+
+## [0.1.0]
+
 ### Added
 
 - Greenfield Home Assistant custom integration under the `crestron_nvx` domain.

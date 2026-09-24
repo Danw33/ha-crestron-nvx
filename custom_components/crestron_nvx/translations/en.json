@@ -50,6 +50,7 @@
     }
   },
   "entity": {
+    "image": {"preview": {"name": "Stream preview"}},
     "sensor": {
       "device_mode": {"name": "Device mode"},
       "firmware_version": {"name": "Firmware version"},

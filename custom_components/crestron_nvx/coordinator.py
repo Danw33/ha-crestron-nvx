@@ -9,9 +9,11 @@ from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from crestron_nvx import (
+    NvxApiError,
     NvxAuthenticationError,
     NvxClient,
     NvxConnectionError,
+    NvxPreviewInfo,
     NvxResponseError,
     NvxSnapshot,
 )
@@ -42,17 +44,24 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
             config_entry=entry,
             name=entry.title,
             update_interval=DEFAULT_SCAN_INTERVAL,
-            always_update=False,
+            always_update=True,
         )
         self.client = client
+        self.preview_info = NvxPreviewInfo()
 
     @override
     async def _async_update_data(self) -> NvxSnapshot:
         """Fetch the current read-only endpoint snapshot."""
 
         try:
-            return await self.client.async_get_snapshot()
+            snapshot = await self.client.async_get_snapshot()
         except NvxAuthenticationError as err:
             raise ConfigEntryAuthFailed from err
         except (NvxConnectionError, NvxResponseError) as err:
             raise UpdateFailed(f"Unable to update DM NVX endpoint: {err}") from err
+        # Optional preview failure must never hide otherwise valid status data.
+        try:
+            self.preview_info = await self.client.async_get_preview_info()
+        except NvxApiError:
+            self.preview_info = NvxPreviewInfo()
+        return snapshot

@@ -2,7 +2,7 @@
 
 from unittest.mock import MagicMock
 
-from crestron_nvx import NvxSnapshot
+from crestron_nvx import NvxPreviewInfo, NvxSnapshot
 
 from custom_components.crestron_nvx.binary_sensor import (
     NvxDeviceReadyBinarySensor,
@@ -26,6 +26,7 @@ def _coordinator() -> MagicMock:
     """Return a coordinator-shaped object."""
 
     coordinator = MagicMock(data=SNAPSHOT, last_update_success=True)
+    coordinator.preview_info = NvxPreviewInfo()
     coordinator.client.configuration_url = "https://nvx.example.local"
     return coordinator
 

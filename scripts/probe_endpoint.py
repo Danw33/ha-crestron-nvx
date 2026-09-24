@@ -50,6 +50,18 @@ _PUBLIC_SCHEMA_KEYS: Final = frozenset(
         "Outputs",
         "Ports",
         "Preview",
+        "IsPreviewOutputEnabled",
+        "HostPreviewImage",
+        "LocalPreview",
+        "LocalPreviewPath",
+        "RelativePath",
+        "IPv4Path",
+        "FQDNPath",
+        "ImageList",
+        "IsImageAvailable",
+        "Size",
+        "Width",
+        "Height",
         "RebootReason",
         "SerialNumber",
         "ShowSetupInformationOnOsd",
@@ -84,7 +96,9 @@ def _shape(value: Any) -> Any:
     return type(value).__name__
 
 
-async def _async_probe(host: str, username: str, verify_ssl: bool) -> None:
+async def _async_probe(
+    host: str, username: str, verify_ssl: bool, preview: bool = False
+) -> None:
     """Read and print a privacy-minimized endpoint summary."""
     password = getpass("DM NVX password: ")
     async with ClientSession() as session:
@@ -104,6 +118,29 @@ async def _async_probe(host: str, username: str, verify_ssl: bool) -> None:
                 object_shapes[path.name] = {"error": type(err).__name__}
             else:
                 object_shapes[path.name] = _shape(payload)
+        preview_result: dict[str, Any] = {}
+        if preview:
+            try:
+                info = await client.async_get_preview_info()
+                preview_result = {
+                    "supported": info.supported,
+                    "enabled": info.enabled,
+                    "local_image_available": info.path is not None,
+                }
+                if info.path:
+                    image = await client.async_get_preview()
+                    preview_result.update(
+                        {
+                            "http_status": 200,
+                            "content_type": image.content_type,
+                            "bytes": len(image.content),
+                            "width": image.width,
+                            "height": image.height,
+                            "authentication": "authenticated session; anonymous access not tested",
+                        }
+                    )
+            except NvxApiError as err:
+                preview_result["error"] = type(err).__name__
     print(
         json.dumps(
             {
@@ -111,6 +148,7 @@ async def _async_probe(host: str, username: str, verify_ssl: bool) -> None:
                 "firmware_version": snapshot.device.firmware_version,
                 "device_specific_shape": _shape(snapshot.raw_device_specific),
                 "documented_object_shapes": object_shapes,
+                "preview_check": preview_result,
             },
             indent=2,
             sort_keys=True,
@@ -126,6 +164,11 @@ def main() -> None:
     parser.add_argument("host", help="Endpoint host name or IP address")
     parser.add_argument("--username", default="admin")
     parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Fetch a preview in memory and report metadata only",
+    )
+    parser.add_argument(
         "--verify-ssl",
         action="store_true",
         help="Verify the endpoint TLS certificate",
@@ -133,7 +176,12 @@ def main() -> None:
     arguments = parser.parse_args()
     try:
         asyncio.run(
-            _async_probe(arguments.host, arguments.username, arguments.verify_ssl)
+            _async_probe(
+                arguments.host,
+                arguments.username,
+                arguments.verify_ssl,
+                arguments.preview,
+            )
         )
     except NvxApiError as err:
         parser.exit(1, f"Probe failed: {err}\n")
