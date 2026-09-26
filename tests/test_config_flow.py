@@ -27,8 +27,9 @@ async def test_user_form(hass: HomeAssistant) -> None:
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    assert result["type"] is FlowResultType.FORM
+    assert result["type"] is FlowResultType.MENU
     assert result["step_id"] == "user"
+    assert result["menu_options"] == ["scan", "manual"]
 
 
 async def test_validate_input_uses_injected_ha_session(hass: HomeAssistant) -> None:

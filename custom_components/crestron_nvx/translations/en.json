@@ -1,8 +1,38 @@
 {
   "title": "Crestron DM NVX",
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
+        "title": "Set up a DM NVX endpoint",
+        "menu_options": {
+          "scan": "Search for devices",
+          "manual": "Enter host manually"
+        }
+      },
+      "scan": {
+        "title": "Search for DM NVX devices",
+        "description": "Leave the target blank to search Home Assistant's enabled local IPv4 networks. For devices on another routed VLAN, enter an IPv4 subnet (for example 192.168.50.0/24) or a single IPv4 address. Searches cover at most 256 addresses and take a few seconds.",
+        "data": {"target": "IPv4 address or subnet (optional)"}
+      },
+      "select_device": {
+        "title": "Select a DM NVX endpoint",
+        "description": "Select a device to configure. Credentials are requested next; discovery alone does not add a device.",
+        "data": {"host": "Discovered device"}
+      },
+      "connect": {
+        "title": "Connect to discovered endpoint",
+        "description": "{device}\n\nReported firmware: {firmware}\n\nReported build date: {build_date}\n\nEnter this endpoint's credentials to verify and add it.",
+        "data": {
+          "username": "Username",
+          "password": "Password",
+          "verify_ssl": "Verify TLS certificate"
+        },
+        "data_description": {
+          "verify_ssl": "Certificate verification is disabled by default because DM NVX endpoints commonly use self-signed certificates. When disabled, Home Assistant cannot verify the endpoint's identity; use this only on a trusted local network. Enable verification when Home Assistant trusts the endpoint certificate."
+        }
+      },
+      "manual": {
         "title": "Connect to a DM NVX endpoint",
         "description": "Enter the local endpoint credentials. This integration currently performs read-only requests.",
         "data": {
@@ -36,6 +66,11 @@
       }
     },
     "error": {
+      "invalid_target": "Enter an IPv4 address or a subnet of /24 or smaller (at most 256 addresses). Loopback, multicast and unspecified addresses are not supported.",
+      "discovery_busy": "Another search is in progress. Wait a few seconds and try again.",
+      "discovery_failed": "Discovery could not use an enabled IPv4 interface or UDP port 41794. Check Home Assistant's network settings and whether another application is using that port. You can also enter the host manually.",
+      "no_devices": "No new supported endpoints replied. Check the target, routing, firewall and device autodiscovery setting, or enter the host manually.",
+      "invalid_selection": "Select a device from this search or enter a host manually.",
       "cannot_connect": "Failed to connect",
       "invalid_auth": "Invalid authentication",
       "invalid_host": "Enter a valid host name or IP address",
@@ -48,6 +83,9 @@
       "reconfigure_successful": "Configuration updated",
       "wrong_device": "The address belongs to a different endpoint"
     }
+  },
+  "selector": {
+    "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "entity": {
     "image": {"preview": {"name": "Stream preview"}},

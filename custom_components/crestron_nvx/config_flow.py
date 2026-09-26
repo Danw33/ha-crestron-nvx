@@ -10,6 +10,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
     BooleanSelector,
+    SelectOptionDict,
+    SelectSelector,
+    SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -26,6 +30,13 @@ from crestron_nvx import (
 )
 
 from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL, DOMAIN
+from .discovery import (
+    DiscoveredDevice,
+    DiscoveryBusyError,
+    DiscoveryError,
+    async_discover,
+    parse_target,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -45,11 +56,13 @@ async def _async_validate_input(
     return await client.async_get_snapshot()
 
 
-def _schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
+def _schema(
+    defaults: dict[str, Any] | None = None, *, include_host: bool = True
+) -> vol.Schema:
     """Build the endpoint schema."""
 
     values = defaults or {}
-    return vol.Schema(
+    schema = vol.Schema(
         {
             vol.Required(CONF_HOST, default=values.get(CONF_HOST)): TextSelector(
                 TextSelectorConfig(type=TextSelectorType.TEXT)
@@ -66,6 +79,10 @@ def _schema(defaults: dict[str, Any] | None = None) -> vol.Schema:
             ): BooleanSelector(),
         }
     )
+    if not include_host:
+        del schema.schema[CONF_HOST]
+        schema = vol.Schema(schema.schema)
+    return schema
 
 
 class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -73,14 +90,113 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
+    def __init__(self) -> None:
+        """Hold untrusted candidates only for this setup flow."""
+        self._devices: dict[str, DiscoveredDevice] = {}
+        self._selected: DiscoveredDevice | None = None
+
     @override
     async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Offer a bounded search or direct endpoint setup."""
+        if user_input is not None:
+            return await self.async_step_manual(user_input)
+        return self.async_show_menu(step_id="user", menu_options=["scan", "manual"])
+
+    async def async_step_scan(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Search only after the user submits the requested scope."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                target = parse_target(user_input.get("target", ""))
+            except ValueError:
+                errors["target"] = "invalid_target"
+            else:
+                try:
+                    devices = await async_discover(self.hass, target)
+                except DiscoveryBusyError:
+                    errors["base"] = "discovery_busy"
+                except DiscoveryError:
+                    errors["base"] = "discovery_failed"
+                else:
+                    configured = {
+                        entry.data.get(CONF_HOST)
+                        for entry in self._async_current_entries()
+                    }
+                    self._devices = {
+                        device.host: device
+                        for device in devices
+                        if device.host not in configured
+                    }
+                    if self._devices:
+                        return await self.async_step_select_device()
+                    errors["base"] = "no_devices"
+        return self.async_show_form(
+            step_id="scan",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(
+                        "target", default=(user_input or {}).get("target", "")
+                    ): str
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_select_device(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Select a candidate before asking for credentials."""
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            if user_input.get(CONF_HOST) == "manual":
+                return await self.async_step_manual()
+            if device := self._devices.get(user_input.get(CONF_HOST, "")):
+                self._async_abort_entries_match({CONF_HOST: device.host})
+                self._selected = device
+                self.context["title_placeholders"] = {"name": device.label}
+                return await self.async_step_manual()
+            errors["base"] = "invalid_selection"
+        choices = {host: device.label for host, device in self._devices.items()}
+        options: list[SelectOptionDict] = [
+            {"value": host, "label": label} for host, label in choices.items()
+        ]
+        options.append({"value": "manual", "label": "manual"})
+        return self.async_show_form(
+            step_id="select_device",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_HOST): SelectSelector(
+                        SelectSelectorConfig(
+                            options=options,
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key="discovered_device",
+                        )
+                    )
+                }
+            ),
+            errors=errors,
+        )
+
+    async def async_step_connect(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Authenticate the selected candidate after explicit user confirmation."""
+        return await self.async_step_manual(user_input)
+
+    async def async_step_manual(
         self, user_input: dict[str, Any] | None = None
     ) -> ConfigFlowResult:
         """Set up one endpoint."""
 
         errors: dict[str, str] = {}
         if user_input is not None:
+            user_input = dict(user_input)
+            if self._selected:
+                user_input[CONF_HOST] = self._selected.host
             user_input[CONF_HOST] = user_input[CONF_HOST].strip().lower()
             if not is_host_valid(user_input[CONF_HOST]):
                 errors[CONF_HOST] = "invalid_host"
@@ -108,8 +224,19 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                         data=user_input,
                     )
         return self.async_show_form(
-            step_id="user",
-            data_schema=_schema(user_input),
+            step_id="connect" if self._selected else "manual",
+            data_schema=_schema(
+                user_input
+                or ({CONF_HOST: self._selected.host} if self._selected else None),
+                include_host=self._selected is None,
+            ),
+            description_placeholders={
+                "device": self._selected.label if self._selected else "",
+                "firmware": (self._selected.firmware or "—") if self._selected else "—",
+                "build_date": (self._selected.build_date or "—")
+                if self._selected
+                else "—",
+            },
             errors=errors,
         )
 

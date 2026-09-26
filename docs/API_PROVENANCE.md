@@ -1,6 +1,6 @@
 # API provenance and clean-source policy
 
-This project is an independent implementation of Crestron's publicly
+The REST client used by this project is an independent implementation of Crestron's publicly
 accessible, publicly documented DM NVX REST API:
 
 - [API reference](https://sdkcon78221.crestron.com/sdk/DM_NVX_REST_API/Content/Topics/API-Reference.htm)
@@ -11,7 +11,10 @@ methods, property names, property types, and model-specific applicability. The
 implementation is based on those public descriptions plus ordinary
 compatibility testing of documented API responses from hardware owned or
 administered by contributors. It does not rely on confidential documentation
-or reverse-engineered wire formats.
+or reverse-engineered REST wire formats. UDP autodiscovery is a separate,
+observational interoperability implementation. Its public research references,
+inspiration credit and limitations are recorded in [DISCOVERY.md](DISCOVERY.md);
+we do not claim to have an official public specification for its packet framing.
 
 This repository must not contain copied vendor prose, documentation pages,
 sample payloads, diagrams, firmware, decompiled code, credentials, cookies,

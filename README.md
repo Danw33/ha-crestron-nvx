@@ -103,7 +103,14 @@ download, restart Home Assistant, and add it through Devices & services.
 
 ## Configuration
 
-The setup flow asks for:
+Choose **Search for devices** or **Enter host manually**. Search with an empty
+target for local broadcast, or enter an IPv4 address/subnet (up to /24) for
+devices on another routed VLAN. Select a result by hostname, model and IP,
+then enter credentials to verify and add it. Searches run only when requested;
+they do not automatically add devices. See [discovery](docs/DISCOVERY.md) for
+network requirements, provenance and limitations.
+
+The connection form asks for:
 
 - **Host name or IP address**: local management address of one endpoint;
 - **Username and password**: a device account allowed to read the API;
@@ -169,8 +176,11 @@ manuals, schemas, examples, firmware, or other proprietary materials.
   certificates commonly installed on DM NVX endpoints. Without verification,
   an on-path device could impersonate the endpoint and receive its credentials;
   use this mode only on a trusted, isolated local network.
-- Automatic discovery is not implemented. Preview availability is determined
-  from capabilities, not an assumed firmware threshold.
+- Discovery is an on-demand IPv4 setup search; background discovery and
+  automatic address updates from discovery are not implemented. Remote VLANs
+  require an explicitly supplied target and working UDP return traffic.
+- Preview availability is determined from capabilities, not an assumed
+  firmware threshold.
 - Long polling/WebSocket telemetry is deferred until polling behaviour is
   understood on the target firmware.
 - No device control is implemented.

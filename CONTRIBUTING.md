@@ -21,7 +21,9 @@ config-flow branches should be fully covered.
 
 Research must remain read-only until control support is designed and approved:
 
-- use `GET` requests only;
+- use `GET` requests for HTTP endpoint research;
+- discovery may send only the identification query described in
+  [DISCOVERY.md](docs/DISCOVERY.md), within an explicitly selected scope;
 - never probe undocumented paths by sending mutating HTTP methods;
 - never send empty API objects;
 - test only equipment and networks you are authorized to access;
@@ -40,11 +42,13 @@ code and descriptions. See [API_PROVENANCE.md](docs/API_PROVENANCE.md).
 
 ## Scope
 
-New protocol concerns and typed data belong in the standalone
+REST protocol concerns and typed API data belong in the standalone
 [`crestron-nvx`](https://github.com/Danw33/py-crestron-nvx) library. Home
 Assistant platform code should depend on its typed snapshot, not vendor JSON.
-The in-repository client remains temporarily mirrored only until the first
-library release can be pinned in `manifest.json`.
+The small UDP discovery implementation currently lives in the integration's
+`discovery.py`, separate from config-flow/UI logic. It uses HA's network
+interface preferences and may be extracted when other product families are
+validated consumers. Do not add a dependency on proprietary SDKs.
 
 Control/write proposals should be isolated from monitoring changes, document
 their safety and failure behaviour, and include tests proving that setup,

@@ -5,6 +5,18 @@ and intends to use semantic versioning after its first release.
 
 ## [Unreleased]
 
+### Added
+
+- On-demand read-only UDP discovery during setup, using HA's enabled IPv4
+  interfaces or an explicitly selected address/subnet (at most /24).
+- Candidate labels with hostname, model and source IP, plus optional reported
+  firmware and build date before authenticated setup.
+- Bounded, paced queries; fixed reply-port handling; cancellation cleanup;
+  duplicate protection through authenticated REST identity.
+- Discovery provenance, inspiration credit, network guidance and synthetic
+  parser/transport/config-flow tests. New HA discovery flow hardware validation
+  remains pending.
+
 ## [0.2.0]
 
 ### Added
