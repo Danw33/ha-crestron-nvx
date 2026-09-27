@@ -1,9 +1,21 @@
 # Changelog
 
 This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
-and intends to use semantic versioning after its first release.
+and uses semantic versioning for releases.
 
 ## [Unreleased]
+
+## [0.4.0]
+
+### Added
+
+- Deferred setup flows for the remaining devices from a scan, surfaced in Home
+  Assistant's Discovered section so each can be configured without rescanning.
+- Authenticated REST identity remains authoritative when creating entries; the
+  temporary discovery key is used only for the pending flow and HA's Ignore
+  handling.
+
+## [0.3.0]
 
 ### Added
 
@@ -14,8 +26,7 @@ and intends to use semantic versioning after its first release.
 - Bounded, paced queries; fixed reply-port handling; cancellation cleanup;
   duplicate protection through authenticated REST identity.
 - Discovery provenance, inspiration credit, network guidance and synthetic
-  parser/transport/config-flow tests. New HA discovery flow hardware validation
-  remains pending.
+  parser, transport and config-flow tests.
 
 ## [0.2.0]
 

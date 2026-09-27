@@ -22,10 +22,11 @@ Compatibility with future firmware or every DM NVX model is not guaranteed.
 
 ## API provenance
 
-This integration communicates through Crestron's **publicly accessible and
-publicly documented DM NVX REST API**. It was not produced by extracting
-confidential or private information and does not depend on reverse-engineered
-wire formats.
+Monitoring and previews communicate through Crestron's **publicly accessible
+and publicly documented DM NVX REST API**. The optional UDP discovery probe
+uses public research and hardware interoperability observations, described in
+[discovery and protocol provenance](docs/DISCOVERY.md). No confidential or
+private information is used.
 
 The authoritative external references are Crestron's public:
 
