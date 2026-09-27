@@ -21,6 +21,7 @@ from .conftest import DEVICE_ID, MOCK_DATA, SNAPSHOT
 DEVICE = DiscoveredDevice(
     "192.0.2.10", "living-room", "DM-NVX-360", "7.1.0", "Jan 02 2025"
 )
+SIBLING = DiscoveredDevice("192.0.2.11", "office", "DM-NVX-350", "6.0.0", "Feb 03 2024")
 PATH = "custom_components.crestron_nvx.config_flow"
 
 
@@ -131,6 +132,87 @@ async def test_display_and_confirm_then_use_rest_identity(hass):
     assert result["result"].unique_id == DEVICE_ID
     assert result["title"] == SNAPSHOT.device.name
     assert "firmware" not in result["data"]
+
+
+async def test_scan_siblings_appear_in_discovered_and_use_authenticated_identity(hass):
+    result = await start_scan(hass)
+    with patch(f"{PATH}.async_discover", AsyncMock(return_value=[DEVICE, SIBLING])):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {"target": "192.0.2.0/24"}
+        )
+
+    with patch(f"{PATH}.discovery_flow.async_create_flow") as create_discovery:
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], {CONF_HOST: DEVICE.host}
+        )
+
+    create_discovery.assert_called_once()
+    args = create_discovery.call_args.kwargs
+    assert args["context"] == {
+        "source": config_entries.SOURCE_INTEGRATION_DISCOVERY,
+        "unique_id": f"udp41794:{SIBLING.host}",
+    }
+    assert args["data"] == {
+        CONF_HOST: SIBLING.host,
+        "hostname": SIBLING.hostname,
+        "model": SIBLING.model,
+        "firmware": SIBLING.firmware,
+        "build_date": SIBLING.build_date,
+    }
+    assert args["discovery_key"].key == f"udp41794:{SIBLING.host}"
+
+    # HA starts each integration-discovery flow in the Discovered shelf. The
+    # temporary key permits Ignore, but successful auth replaces it with the
+    # authenticated REST device ID before creating an entry.
+    flow = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={
+            "source": config_entries.SOURCE_INTEGRATION_DISCOVERY,
+            "unique_id": f"udp41794:{SIBLING.host}",
+        },
+        data=args["data"],
+    )
+    assert flow["step_id"] == "connect"
+    credentials = {key: value for key, value in MOCK_DATA.items() if key != CONF_HOST}
+    with (
+        patch(f"{PATH}._async_validate_input", AsyncMock(return_value=SNAPSHOT)),
+        patch(
+            "custom_components.crestron_nvx.async_setup_entry",
+            AsyncMock(return_value=True),
+        ),
+    ):
+        flow = await hass.config_entries.flow.async_configure(
+            flow["flow_id"], credentials
+        )
+    assert flow["type"] is FlowResultType.CREATE_ENTRY
+    assert flow["result"].unique_id == DEVICE_ID
+    assert flow["result"].data[CONF_HOST] == SIBLING.host
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        {CONF_HOST: DEVICE.host},
+        {
+            CONF_HOST: "not-an-ip",
+            "hostname": DEVICE.hostname,
+            "model": DEVICE.model,
+        },
+        {
+            CONF_HOST: DEVICE.host,
+            "hostname": DEVICE.hostname,
+            "model": "unsupported-model",
+        },
+    ],
+)
+async def test_discovery_rejects_invalid_candidate(hass, data):
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_INTEGRATION_DISCOVERY},
+        data=data,
+    )
+    assert result["type"] is FlowResultType.ABORT
+    assert result["reason"] == "invalid_discovery"
 
 
 async def test_discovery_auth_failure_keeps_candidate(hass):

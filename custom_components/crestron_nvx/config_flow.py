@@ -1,13 +1,17 @@
 """Config flow for Crestron DM NVX."""
 
 import logging
+from ipaddress import IPv4Address
 from typing import Any, override
 
 import voluptuous as vol
+from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import discovery_flow
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.discovery_flow import DiscoveryKey
 from homeassistant.helpers.selector import (
     BooleanSelector,
     SelectOptionDict,
@@ -29,7 +33,7 @@ from crestron_nvx import (
     NvxSnapshot,
 )
 
-from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL, DOMAIN
+from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL, DOMAIN, SUPPORTED_MODELS
 from .discovery import (
     DiscoveredDevice,
     DiscoveryBusyError,
@@ -158,6 +162,7 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._async_abort_entries_match({CONF_HOST: device.host})
                 self._selected = device
                 self.context["title_placeholders"] = {"name": device.label}
+                self._async_schedule_sibling_discoveries(device)
                 return await self.async_step_manual()
             errors["base"] = "invalid_selection"
         choices = {host: device.label for host, device in self._devices.items()}
@@ -180,6 +185,77 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
             ),
             errors=errors,
         )
+
+    async def async_step_integration_discovery(
+        self, discovery_info: dict[str, Any]
+    ) -> ConfigFlowResult:
+        """Ask the user to authenticate a candidate from a previous scan."""
+        host = discovery_info.get(CONF_HOST)
+        hostname = discovery_info.get("hostname")
+        model = discovery_info.get("model")
+        firmware = discovery_info.get("firmware")
+        build_date = discovery_info.get("build_date")
+        if (
+            not isinstance(host, str)
+            or not host
+            or not isinstance(hostname, str)
+            or not hostname
+            or not isinstance(model, str)
+            or not model
+        ):
+            return self.async_abort(reason="invalid_discovery")
+
+        try:
+            if str(IPv4Address(host)) != host or model not in SUPPORTED_MODELS:
+                return self.async_abort(reason="invalid_discovery")
+            device = DiscoveredDevice(
+                host=host,
+                hostname=hostname,
+                model=model,
+                firmware=firmware if isinstance(firmware, str) else None,
+                build_date=build_date if isinstance(build_date, str) else None,
+            )
+        except TypeError, ValueError:
+            return self.async_abort(reason="invalid_discovery")
+
+        # This temporary key enables HA's Ignore action. It is never saved as
+        # the config-entry identity; successful authentication replaces it with
+        # the device ID reported by the documented REST API.
+        pending_id = f"udp41794:{device.host}"
+        await self.async_set_unique_id(pending_id)
+        self._abort_if_unique_id_configured()
+        self._selected = device
+        self.context["title_placeholders"] = {"name": device.label}
+        return await self.async_step_connect()
+
+    def _async_schedule_sibling_discoveries(self, selected: DiscoveredDevice) -> None:
+        """Surface other scan results in HA's Discovered shelf for later setup."""
+        configured_hosts = {
+            entry.data.get(CONF_HOST) for entry in self._async_current_entries()
+        }
+        for device in self._devices.values():
+            if device.host == selected.host or device.host in configured_hosts:
+                continue
+            discovery_flow.async_create_flow(
+                self.hass,
+                DOMAIN,
+                context={
+                    "source": config_entries.SOURCE_INTEGRATION_DISCOVERY,
+                    "unique_id": f"udp41794:{device.host}",
+                },
+                data={
+                    CONF_HOST: device.host,
+                    "hostname": device.hostname,
+                    "model": device.model,
+                    "firmware": device.firmware,
+                    "build_date": device.build_date,
+                },
+                discovery_key=DiscoveryKey(
+                    domain=DOMAIN,
+                    key=f"udp41794:{device.host}",
+                    version=1,
+                ),
+            )
 
     async def async_step_connect(
         self, user_input: dict[str, Any] | None = None

@@ -79,6 +79,7 @@
     },
     "abort": {
       "already_configured": "This endpoint is already configured",
+      "invalid_discovery": "The discovery result is incomplete or invalid",
       "reauth_successful": "Authentication updated",
       "reconfigure_successful": "Configuration updated",
       "wrong_device": "The address belongs to a different endpoint"
