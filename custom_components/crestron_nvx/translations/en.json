@@ -105,10 +105,11 @@
       "output_resolution": {"name": "{port_name} output resolution"},
       "receive_stream_status": {"name": "Receive stream {stream_number} status"},
       "receive_stream_resolution": {"name": "Receive stream {stream_number} resolution"},
-      "receive_stream_bitrate": {"name": "Receive stream {stream_number} bitrate"},
+      "receive_stream_bitrate": {"name": "Receive stream {stream_number} reported bitrate"},
       "transmit_stream_status": {"name": "Transmit stream {stream_number} status"},
       "transmit_stream_resolution": {"name": "Transmit stream {stream_number} resolution"},
-      "transmit_stream_bitrate": {"name": "Transmit stream {stream_number} bitrate"}
+      "transmit_stream_bitrate": {"name": "Transmit stream {stream_number} reported bitrate"},
+      "transmit_stream_active_bitrate": {"name": "Transmit stream {stream_number} active bitrate"}
     },
     "binary_sensor": {
       "device_ready": {"name": "Device ready"},

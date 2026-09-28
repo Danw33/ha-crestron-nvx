@@ -114,7 +114,11 @@ async def async_setup_entry(
         for index, stream in enumerate(streams, start=1):
             entities.extend(
                 NvxStreamSensor(coordinator, stream, index, metric)
-                for metric in ("status", "resolution", "bitrate")
+                for metric in (
+                    ("status", "resolution", "bitrate", "active_bitrate")
+                    if stream.direction == "transmit"
+                    else ("status", "resolution", "bitrate")
+                )
             )
     async_add_entities(entities)
 
@@ -199,9 +203,10 @@ class NvxStreamSensor(CrestronNvxEntity, SensorEntity):
         self._metric = metric
         self._attr_translation_key = f"{stream.direction}_stream_{metric}"
         self._attr_translation_placeholders = {"stream_number": str(number)}
-        if metric == "bitrate":
+        if metric in {"bitrate", "active_bitrate"}:
             self._attr_native_unit_of_measurement = UnitOfDataRate.MEGABITS_PER_SECOND
             self._attr_entity_category = EntityCategory.DIAGNOSTIC
+            self._attr_entity_registry_enabled_default = metric == "active_bitrate"
 
     def _stream(self) -> NvxStream | None:
         """Return the latest matching stream."""
@@ -227,6 +232,8 @@ class NvxStreamSensor(CrestronNvxEntity, SensorEntity):
             return stream.status
         if self._metric == "resolution":
             return stream.resolution
+        if self._metric == "active_bitrate":
+            return stream.active_bitrate_mbps
         return stream.bitrate_mbps
 
     @property

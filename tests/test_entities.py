@@ -67,7 +67,7 @@ async def test_platform_setup() -> None:
     add = MagicMock()
     await async_setup_sensors(MagicMock(), entry, add)
     sensor_entities = list(add.call_args.args[0])
-    assert len(sensor_entities) == 18
+    assert len(sensor_entities) == 19
     assert sensor_entities[10].native_value == "1920x1080@60"
     assert sensor_entities[12].native_value == "Started"
     assert sensor_entities[13].native_value == "1920x1080@60"

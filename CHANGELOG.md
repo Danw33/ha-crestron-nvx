@@ -5,6 +5,30 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+## [0.5.0]
+
+### Fixed
+
+- A/V port entities keep stable identities when firmware regenerates port UUIDs
+  on every poll, preventing unavailable entities and repeated registrations.
+- Conservatively migrate the oldest recognised legacy entity for each
+  unambiguously labelled physical port/metric, retaining its entity ID and
+  customisations. Surplus or ambiguous entries remain for manual review.
+
+### Added
+
+- Separate transmit active-bitrate diagnostic entities; missing measurements
+  remain unknown instead of falling back to the reported bitrate.
+
+### Changed
+
+- Existing bitrate entities show the raw API `Bitrate` field and are labelled
+  "reported bitrate". Their historical transmit readings may have mixed active
+  and reported values. No values are clamped or inferred from stream status.
+- Device-ready, codec-ready and reported-bitrate diagnostics are disabled by
+  default for newly registered entities. Existing enable/disable choices persist.
+- Require `crestron-nvx==0.3.0`
+
 ## [0.4.0]
 
 ### Added

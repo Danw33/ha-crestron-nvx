@@ -32,6 +32,7 @@ BINARY_SENSORS: tuple[NvxBinarySensorDescription, ...] = (
         key="device_ready",
         translation_key="device_ready",
         entity_category=EntityCategory.DIAGNOSTIC,
+        entity_registry_enabled_default=False,
         value_fn=lambda data: data.device_ready,
     ),
     NvxBinarySensorDescription(
@@ -191,6 +192,9 @@ class NvxAvPortBinarySensor(CrestronNvxEntity, BinarySensorEntity):
 
 class NvxStreamCodecReadyBinarySensor(CrestronNvxEntity, BinarySensorEntity):
     """Represent codec readiness for one stream slot."""
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_entity_registry_enabled_default = False
 
     def __init__(
         self, coordinator: CrestronNvxCoordinator, stream: NvxStream, number: int

@@ -8,6 +8,7 @@ from crestron_nvx import NvxClient
 
 from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL, PLATFORMS
 from .coordinator import CrestronNvxConfigEntry, CrestronNvxCoordinator
+from .migration import async_migrate_port_entities
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: CrestronNvxConfigEntry) -> bool:
@@ -23,6 +24,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: CrestronNvxConfigEntry) 
     coordinator = CrestronNvxCoordinator(hass, entry, client)
     await coordinator.async_config_entry_first_refresh()
     entry.runtime_data = coordinator
+    async_migrate_port_entities(hass, entry.entry_id, coordinator.data)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
