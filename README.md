@@ -44,10 +44,13 @@ project's documentation, hardware-observation, and fixture rules.
 
 ## Project status
 
-Version 0.1.0 is released and has been used successfully through HACS.
-Version 0.2.0 adds optional previews, validated on a firmware 7.1 DM-NVX-360
-in the entity view, HA Media, and remotely through the HA iOS app. Preview
-updates work without additional configuration; other models remain to be tested.
+Version 0.6.0 prepares immediate discovery cards, 
+improved IPv4 hostname/identity matching, and consistent built-in port labels. 
+
+Setup and monitoring have been observed on firmware 7.1 DM-NVX-350/360 and
+firmware 6.0 DM-NVX-E30 endpoints. Preview display, updates, HA Media and remote
+iOS viewing were validated on the 360; preview operation was also reported on
+the E30, and preview entities were observed on both configured 350s.
 It currently:
 
 - configures one physical endpoint per Home Assistant config entry;
@@ -69,9 +72,11 @@ input, stream, or device-configuration command can be sent by this version.
 
 1. Complete Phase 1 status coverage using sanitized observations from each
    target model, including stream, input-sync, and output-sync state.
-2. Validate the 0.2.0 optional preview image entity on physical hardware.
+2. Complete preview lifecycle and 0.6.0 discovery/port-label hardware checks.
 3. Design separately reviewed, explicitly guarded control entities/actions.
 4. Add stream-to-endpoint selection with a Home Assistant-native UX.
+5. Validate device-wide discovery identity across unknown interfaces; consider
+   IPv6 discovery/address matching separately after the IPv4 implementation.
 
 The design aims to remain compatible with Home Assistant's Gold/Platinum
 architecture expectations, but this custom integration does **not** claim an
@@ -112,6 +117,10 @@ they do not automatically add devices. Results also appear in **Discovered**
 as soon as the scan finishes, even if you close the search dialog without
 adding a device. These temporary cards let you add the remaining devices
 without scanning again; successful setup removes the matching card.
+
+Configured hostnames are matched through all their current IPv4 DNS answers,
+not device display names. Authenticated duplicate setup checks REST identity
+and, when unambiguous, model/serial number, without replacing existing settings.
 
 The connection form asks for:
 
@@ -160,9 +169,11 @@ objects and fields because endpoints can omit inactive or inapplicable fields,
 including endpoints of the same model on the same firmware. Older firmware may
 be added to the supported range after validation on available hardware.
 
-A manual Home Assistant installation has successfully configured a firmware
-7.1 DM-NVX-360 by hostname and created one device with 53 field-driven entities
-covering the returned device, source, port, and stream status. See the
+The initial manual 360 setup used a hostname and created 53 entities. Subsequent
+HACS operation includes both 350s and the E30; counts vary with firmware,
+capabilities, enabled diagnostics and retained legacy registry entries. Built-in
+port labels now display as `Input 1` / `Output 1`; topology-confirmed `output0`
+becomes `Output 1`. Custom labels and existing entity IDs are preserved. See the
 [hardware validation record](docs/HARDWARE_VALIDATION.md) for what this proves
 and which lifecycle tests remain outstanding.
 
@@ -182,6 +193,8 @@ manuals, schemas, examples, firmware, or other proprietary materials.
 - Discovery is an on-demand IPv4 setup search; background discovery and
   automatic address updates from discovery are not implemented. Remote VLANs
   require an explicitly supplied target and working UDP return traffic.
+- Unknown alternate interfaces cannot always be deduplicated before login;
+  the UDP reply lacks a verified device-wide identity. IPv6 discovery is deferred.
 - Preview availability is determined from capabilities, not an assumed
   firmware threshold.
 - Long polling/WebSocket telemetry is deferred until polling behaviour is

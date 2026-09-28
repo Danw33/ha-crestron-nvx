@@ -5,6 +5,8 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-28
+
 ### Fixed
 
 - Normalize built-in A/V port labels to sentence case (for example, `INPUT 1`
