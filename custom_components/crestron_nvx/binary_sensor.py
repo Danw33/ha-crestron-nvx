@@ -15,7 +15,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from crestron_nvx import NvxAvPort, NvxSnapshot, NvxStream
 
 from .coordinator import CrestronNvxConfigEntry, CrestronNvxCoordinator
-from .entity import CrestronNvxEntity
+from .entity import CrestronNvxEntity, av_port_display_name
 
 PARALLEL_UPDATES = 0
 
@@ -155,7 +155,7 @@ class NvxAvPortBinarySensor(CrestronNvxEntity, BinarySensorEntity):
         self._direction = port.direction
         self._metric = metric
         self._attr_translation_key = f"{port.direction}_{metric}"
-        self._attr_translation_placeholders = {"port_name": port.name}
+        self._attr_translation_placeholders = {"port_name": av_port_display_name(port)}
 
     def _port(self) -> NvxAvPort | None:
         """Return the latest matching port."""

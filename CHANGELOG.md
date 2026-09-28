@@ -7,6 +7,10 @@ and uses semantic versioning for releases.
 
 ### Fixed
 
+- Normalize built-in A/V port labels to sentence case (for example, `INPUT 1`
+  becomes `Input 1`). A topology-confirmed zero-based group label such as
+  `output0` displays as `Output 1`. Custom labels, raw API data, stable unique
+  IDs and existing entity IDs remain unchanged; no library update is required.
 - Filter discovery suggestions against every resolved IPv4 address of configured
   hostnames, independently of device display names. Remove matching stale cards
   on subsequent scans and after authenticated setup.
