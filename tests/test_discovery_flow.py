@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from homeassistant import config_entries
 from homeassistant.const import CONF_HOST
+from homeassistant.core import CoreState
 from homeassistant.data_entry_flow import FlowResultType
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -134,45 +135,67 @@ async def test_display_and_confirm_then_use_rest_identity(hass):
     assert "firmware" not in result["data"]
 
 
-async def test_scan_siblings_appear_in_discovered_and_use_authenticated_identity(hass):
+def pending_discoveries(hass):
+    return [
+        flow
+        for flow in hass.config_entries.flow.async_progress_by_handler(DOMAIN)
+        if flow["context"]["source"] == config_entries.SOURCE_INTEGRATION_DISCOVERY
+    ]
+
+
+async def scan_pair(hass):
+    hass.set_state(CoreState.running)
     result = await start_scan(hass)
     with patch(f"{PATH}.async_discover", AsyncMock(return_value=[DEVICE, SIBLING])):
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {"target": "192.0.2.0/24"}
         )
+    await hass.async_block_till_done()
+    return result
 
-    with patch(f"{PATH}.discovery_flow.async_create_flow") as create_discovery:
+
+@pytest.mark.parametrize("select_first", [False, True])
+async def test_scan_publishes_before_selection_and_survives_cancel(hass, select_first):
+    with patch(f"{PATH}._async_validate_input") as validate:
+        result = await scan_pair(hass)
+        assert result["step_id"] == "select_device"
+        cards = pending_discoveries(hass)
+        assert {card["context"]["unique_id"] for card in cards} == {
+            f"udp41794:{DEVICE.host}",
+            f"udp41794:{SIBLING.host}",
+        }
+        assert all(card["step_id"] == "connect" for card in cards)
+        if select_first:
+            result = await hass.config_entries.flow.async_configure(
+                result["flow_id"], {CONF_HOST: DEVICE.host}
+            )
+        hass.config_entries.flow.async_abort(result["flow_id"])
+        assert pending_discoveries(hass) == cards
+        assert not hass.config_entries.async_entries(DOMAIN)
+        validate.assert_not_called()
+
+
+async def test_repeated_scan_does_not_duplicate_cards(hass):
+    result = await scan_pair(hass)
+    cards = pending_discoveries(hass)
+    hass.config_entries.flow.async_abort(result["flow_id"])
+    await scan_pair(hass)
+    assert pending_discoveries(hass) == cards
+
+
+@pytest.mark.parametrize("from_card", [False, True])
+async def test_setup_retires_only_matching_card(hass, from_card):
+    result = await scan_pair(hass)
+    if from_card:
+        result = next(
+            card
+            for card in pending_discoveries(hass)
+            if card["context"]["unique_id"] == f"udp41794:{DEVICE.host}"
+        )
+    else:
         result = await hass.config_entries.flow.async_configure(
             result["flow_id"], {CONF_HOST: DEVICE.host}
         )
-
-    create_discovery.assert_called_once()
-    args = create_discovery.call_args.kwargs
-    assert args["context"] == {
-        "source": config_entries.SOURCE_INTEGRATION_DISCOVERY,
-        "unique_id": f"udp41794:{SIBLING.host}",
-    }
-    assert args["data"] == {
-        CONF_HOST: SIBLING.host,
-        "hostname": SIBLING.hostname,
-        "model": SIBLING.model,
-        "firmware": SIBLING.firmware,
-        "build_date": SIBLING.build_date,
-    }
-    assert args["discovery_key"].key == f"udp41794:{SIBLING.host}"
-
-    # HA starts each integration-discovery flow in the Discovered shelf. The
-    # temporary key permits Ignore, but successful auth replaces it with the
-    # authenticated REST device ID before creating an entry.
-    flow = await hass.config_entries.flow.async_init(
-        DOMAIN,
-        context={
-            "source": config_entries.SOURCE_INTEGRATION_DISCOVERY,
-            "unique_id": f"udp41794:{SIBLING.host}",
-        },
-        data=args["data"],
-    )
-    assert flow["step_id"] == "connect"
     credentials = {key: value for key, value in MOCK_DATA.items() if key != CONF_HOST}
     with (
         patch(f"{PATH}._async_validate_input", AsyncMock(return_value=SNAPSHOT)),
@@ -181,12 +204,32 @@ async def test_scan_siblings_appear_in_discovered_and_use_authenticated_identity
             AsyncMock(return_value=True),
         ),
     ):
-        flow = await hass.config_entries.flow.async_configure(
-            flow["flow_id"], credentials
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"], credentials
         )
-    assert flow["type"] is FlowResultType.CREATE_ENTRY
-    assert flow["result"].unique_id == DEVICE_ID
-    assert flow["result"].data[CONF_HOST] == SIBLING.host
+        await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert result["result"].unique_id == DEVICE_ID
+    assert result["result"].data[CONF_HOST] == DEVICE.host
+    assert [card["context"]["unique_id"] for card in pending_discoveries(hass)] == [
+        f"udp41794:{SIBLING.host}"
+    ]
+
+
+async def test_delayed_discovery_for_configured_address_aborts(hass):
+    MockConfigEntry(
+        domain=DOMAIN, data={**MOCK_DATA, CONF_HOST: DEVICE.host}
+    ).add_to_hass(hass)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_INTEGRATION_DISCOVERY},
+        data={
+            CONF_HOST: DEVICE.host,
+            "hostname": DEVICE.hostname,
+            "model": DEVICE.model,
+        },
+    )
+    assert result["reason"] == "already_configured"
 
 
 @pytest.mark.parametrize(
@@ -218,7 +261,11 @@ async def test_discovery_rejects_invalid_candidate(hass, data):
 async def test_discovery_auth_failure_keeps_candidate(hass):
     from crestron_nvx import NvxAuthenticationError
 
+    hass.set_state(CoreState.running)
     result = await select_device(hass)
+    await hass.async_block_till_done()
+    cards = pending_discoveries(hass)
+    assert len(cards) == 1
     with patch(
         f"{PATH}._async_validate_input", AsyncMock(side_effect=NvxAuthenticationError)
     ):
@@ -231,6 +278,20 @@ async def test_discovery_auth_failure_keeps_candidate(hass):
     assert result["step_id"] == "connect"
     assert result["errors"] == {"base": "invalid_auth"}
     assert result["description_placeholders"]["device"] == DEVICE.label
+    assert pending_discoveries(hass) == cards
+
+
+async def test_ignored_candidate_not_republished(hass):
+    MockConfigEntry(
+        domain=DOMAIN,
+        source=config_entries.SOURCE_IGNORE,
+        unique_id=f"udp41794:{DEVICE.host}",
+        data={},
+    ).add_to_hass(hass)
+    await scan_pair(hass)
+    assert [card["context"]["unique_id"] for card in pending_discoveries(hass)] == [
+        f"udp41794:{SIBLING.host}"
+    ]
 
 
 async def test_filter_configured_ip(hass):

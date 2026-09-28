@@ -5,6 +5,13 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+### Fixed
+
+- Publish IPv4 scan results in Home Assistant's Discovered section as soon as
+  scanning finishes, even if the scanning dialog is closed without adding a
+  device. Successful setup removes the matching pending card; other candidates
+  remain available without another scan.
+
 ## [0.5.0]
 
 ### Fixed

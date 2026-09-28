@@ -136,6 +136,7 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                         if device.host not in configured
                     }
                     if self._devices:
+                        self._async_schedule_discoveries()
                         return await self.async_step_select_device()
                     errors["base"] = "no_devices"
         return self.async_show_form(
@@ -162,7 +163,6 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                 self._async_abort_entries_match({CONF_HOST: device.host})
                 self._selected = device
                 self.context["title_placeholders"] = {"name": device.label}
-                self._async_schedule_sibling_discoveries(device)
                 return await self.async_step_manual()
             errors["base"] = "invalid_selection"
         choices = {host: device.label for host, device in self._devices.items()}
@@ -218,6 +218,8 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
         except TypeError, ValueError:
             return self.async_abort(reason="invalid_discovery")
 
+        self._async_abort_entries_match({CONF_HOST: device.host})
+
         # This temporary key enables HA's Ignore action. It is never saved as
         # the config-entry identity; successful authentication replaces it with
         # the device ID reported by the documented REST API.
@@ -228,13 +230,13 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
         self.context["title_placeholders"] = {"name": device.label}
         return await self.async_step_connect()
 
-    def _async_schedule_sibling_discoveries(self, selected: DiscoveredDevice) -> None:
-        """Surface other scan results in HA's Discovered shelf for later setup."""
+    def _async_schedule_discoveries(self) -> None:
+        """Surface all scan results independently of the scanning dialog."""
         configured_hosts = {
             entry.data.get(CONF_HOST) for entry in self._async_current_entries()
         }
         for device in self._devices.values():
-            if device.host == selected.host or device.host in configured_hosts:
+            if device.host in configured_hosts:
                 continue
             discovery_flow.async_create_flow(
                 self.hass,
@@ -256,6 +258,17 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                     version=1,
                 ),
             )
+
+    def _async_abort_pending_discovery(self, host: str) -> None:
+        """Retire this address's card only after successful authentication."""
+        for flow in self.hass.config_entries.flow.async_progress_by_handler(DOMAIN):
+            if (
+                flow["flow_id"] != self.flow_id
+                and flow["context"].get("source")
+                == config_entries.SOURCE_INTEGRATION_DISCOVERY
+                and flow["context"].get("unique_id") == f"udp41794:{host}"
+            ):
+                self.hass.config_entries.flow.async_abort(flow["flow_id"])
 
     async def async_step_connect(
         self, user_input: dict[str, Any] | None = None
@@ -292,6 +305,7 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "unknown"
                 else:
                     await self.async_set_unique_id(snapshot.device.device_id)
+                    self._async_abort_pending_discovery(user_input[CONF_HOST])
                     self._abort_if_unique_id_configured(
                         updates={CONF_HOST: user_input[CONF_HOST]}
                     )

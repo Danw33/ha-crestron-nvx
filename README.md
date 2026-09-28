@@ -108,8 +108,10 @@ Choose **Search for devices** or **Enter host manually**. Search with an empty
 target for local broadcast, or enter an IPv4 address/subnet (up to /24) for
 devices on another routed VLAN. Select a result by hostname, model and IP,
 then enter credentials to verify and add it. Searches run only when requested;
-they do not automatically add devices. See [discovery](docs/DISCOVERY.md) for
-network requirements, provenance and limitations.
+they do not automatically add devices. Results also appear in **Discovered**
+as soon as the scan finishes, even if you close the search dialog without
+adding a device. These temporary cards let you add the remaining devices
+without scanning again; successful setup removes the matching card.
 
 The connection form asks for:
 
