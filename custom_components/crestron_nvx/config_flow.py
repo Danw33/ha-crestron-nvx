@@ -41,6 +41,11 @@ from .discovery import (
     async_discover,
     parse_target,
 )
+from .identity import (
+    async_configured_addresses,
+    async_ipv4_addresses,
+    authenticated_entry,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -126,10 +131,9 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                 except DiscoveryError:
                     errors["base"] = "discovery_failed"
                 else:
-                    configured = {
-                        entry.data.get(CONF_HOST)
-                        for entry in self._async_current_entries()
-                    }
+                    configured = await async_configured_addresses(self.hass)
+                    for host in configured:
+                        self._async_abort_pending_discovery(host)
                     self._devices = {
                         device.host: device
                         for device in devices
@@ -161,6 +165,9 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                 return await self.async_step_manual()
             if device := self._devices.get(user_input.get(CONF_HOST, "")):
                 self._async_abort_entries_match({CONF_HOST: device.host})
+                if device.host in await async_configured_addresses(self.hass):
+                    self._async_abort_pending_discovery(device.host)
+                    return self.async_abort(reason="already_configured")
                 self._selected = device
                 self.context["title_placeholders"] = {"name": device.label}
                 return await self.async_step_manual()
@@ -219,6 +226,8 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="invalid_discovery")
 
         self._async_abort_entries_match({CONF_HOST: device.host})
+        if device.host in await async_configured_addresses(self.hass):
+            return self.async_abort(reason="already_configured")
 
         # This temporary key enables HA's Ignore action. It is never saved as
         # the config-entry identity; successful authentication replaces it with
@@ -304,11 +313,22 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                     _LOGGER.exception("Unexpected error validating DM NVX endpoint")
                     errors["base"] = "unknown"
                 else:
-                    await self.async_set_unique_id(snapshot.device.device_id)
-                    self._async_abort_pending_discovery(user_input[CONF_HOST])
-                    self._abort_if_unique_id_configured(
-                        updates={CONF_HOST: user_input[CONF_HOST]}
+                    existing = authenticated_entry(self.hass, snapshot.device)
+                    await self.async_set_unique_id(
+                        existing.unique_id if existing else snapshot.device.device_id
                     )
+                    addresses = await async_ipv4_addresses(
+                        self.hass, user_input[CONF_HOST]
+                    )
+                    if existing:
+                        addresses |= await async_ipv4_addresses(
+                            self.hass, existing.data[CONF_HOST]
+                        )
+                    for host in addresses:
+                        self._async_abort_pending_discovery(host)
+                    # An alternate interface is not a request to replace the
+                    # working host, credentials or existing entity identities.
+                    self._abort_if_unique_id_configured()
                     return self.async_create_entry(
                         title=snapshot.device.name,
                         data=user_input,

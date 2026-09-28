@@ -119,8 +119,8 @@ async def test_invalid_host(hass: HomeAssistant) -> None:
     assert result["errors"] == {CONF_HOST: "invalid_host"}
 
 
-async def test_duplicate_updates_host(hass: HomeAssistant) -> None:
-    """Abort duplicates while updating a discovered address."""
+async def test_duplicate_preserves_host(hass: HomeAssistant) -> None:
+    """An alternate interface must not replace the existing connection."""
 
     entry = MockConfigEntry(domain=DOMAIN, unique_id=DEVICE_ID, data=MOCK_DATA)
     entry.add_to_hass(hass)
@@ -135,7 +135,7 @@ async def test_duplicate_updates_host(hass: HomeAssistant) -> None:
         )
     assert result["type"] is FlowResultType.ABORT
     assert result["reason"] == "already_configured"
-    assert entry.data[CONF_HOST] == "new.example.local"
+    assert entry.data == MOCK_DATA
 
 
 async def test_reauth_success(hass: HomeAssistant) -> None:

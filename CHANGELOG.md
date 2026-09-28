@@ -7,6 +7,12 @@ and uses semantic versioning for releases.
 
 ### Fixed
 
+- Filter discovery suggestions against every resolved IPv4 address of configured
+  hostnames, independently of device display names. Remove matching stale cards
+  on subsequent scans and after authenticated setup.
+- Reject authenticated duplicate setup by REST device ID or an unambiguous
+  matching model/serial number without replacing the existing connection host.
+  UDP names alone cannot identify previously unknown alternate interfaces.
 - Publish IPv4 scan results in Home Assistant's Discovered section as soon as
   scanning finishes, even if the scanning dialog is closed without adding a
   device. Successful setup removes the matching pending card; other candidates

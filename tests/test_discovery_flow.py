@@ -18,6 +18,7 @@ from custom_components.crestron_nvx.discovery import (
 )
 
 from .conftest import DEVICE_ID, MOCK_DATA, SNAPSHOT
+from .test_identity import ipv4_records, registered_entry
 
 DEVICE = DiscoveredDevice(
     "192.0.2.10", "living-room", "DM-NVX-360", "7.1.0", "Jan 02 2025"
@@ -326,6 +327,110 @@ async def test_hostname_configured_device_deduplicates_after_auth(hass):
             result["flow_id"], credentials
         )
     assert result["reason"] == "already_configured"
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+    assert entry.data == MOCK_DATA
+
+
+async def test_scan_filters_all_configured_hostname_addresses(hass, mock_ipv4_dns):
+    mock_ipv4_dns.return_value = ipv4_records(DEVICE.host, SIBLING.host)
+    MockConfigEntry(
+        domain=DOMAIN, data=MOCK_DATA, unique_id=DEVICE_ID, title="Living Room TV"
+    ).add_to_hass(hass)
+    with patch(f"{PATH}._async_validate_input") as validate:
+        result = await scan_pair(hass)
+    assert result["errors"] == {"base": "no_devices"}
+    assert not pending_discoveries(hass)
+    validate.assert_not_called()
+
+
+async def test_rescan_removes_cards_now_known_by_hostname(hass, mock_ipv4_dns):
+    result = await scan_pair(hass)
+    hass.config_entries.flow.async_abort(result["flow_id"])
+    MockConfigEntry(domain=DOMAIN, data=MOCK_DATA, unique_id=DEVICE_ID).add_to_hass(
+        hass
+    )
+    mock_ipv4_dns.return_value = ipv4_records(DEVICE.host)
+    result = await scan_pair(hass)
+    assert result["step_id"] == "select_device"
+    assert [card["context"]["unique_id"] for card in pending_discoveries(hass)] == [
+        f"udp41794:{SIBLING.host}"
+    ]
+
+
+async def test_selected_candidate_now_configured_by_hostname(hass, mock_ipv4_dns):
+    result = await find_device(hass)
+    MockConfigEntry(domain=DOMAIN, data=MOCK_DATA, unique_id=DEVICE_ID).add_to_hass(
+        hass
+    )
+    mock_ipv4_dns.return_value = ipv4_records(DEVICE.host)
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {CONF_HOST: DEVICE.host}
+    )
+    assert result["reason"] == "already_configured"
+
+
+async def test_delayed_card_filters_configured_hostname(hass, mock_ipv4_dns):
+    MockConfigEntry(domain=DOMAIN, data=MOCK_DATA, unique_id=DEVICE_ID).add_to_hass(
+        hass
+    )
+    mock_ipv4_dns.return_value = ipv4_records(DEVICE.host)
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": config_entries.SOURCE_INTEGRATION_DISCOVERY},
+        data={
+            CONF_HOST: DEVICE.host,
+            "hostname": DEVICE.hostname,
+            "model": DEVICE.model,
+        },
+    )
+    assert result["reason"] == "already_configured"
+
+
+async def test_equal_udp_names_do_not_merge_unknown_devices(hass):
+    from dataclasses import replace
+
+    hass.set_state(CoreState.running)
+    result = await start_scan(hass)
+    with patch(
+        f"{PATH}.async_discover",
+        AsyncMock(return_value=[DEVICE, replace(DEVICE, host=SIBLING.host)]),
+    ):
+        result = await hass.config_entries.flow.async_configure(result["flow_id"], {})
+    await hass.async_block_till_done()
+    assert len(pending_discoveries(hass)) == 2
+    assert len(result["data_schema"].schema[CONF_HOST].config["options"]) == 3
+
+
+async def test_manual_hostname_setup_retires_all_resolved_cards(hass, mock_ipv4_dns):
+    result = await scan_pair(hass)
+    hass.config_entries.flow.async_abort(result["flow_id"])
+    mock_ipv4_dns.return_value = ipv4_records(DEVICE.host, SIBLING.host)
+    with (
+        patch(f"{PATH}._async_validate_input", AsyncMock(return_value=SNAPSHOT)),
+        patch(
+            "custom_components.crestron_nvx.async_setup_entry",
+            AsyncMock(return_value=True),
+        ),
+    ):
+        result = await hass.config_entries.flow.async_init(
+            DOMAIN, context={"source": config_entries.SOURCE_USER}, data=MOCK_DATA
+        )
+        await hass.async_block_till_done()
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    assert not pending_discoveries(hass)
+
+
+async def test_authenticated_alternate_interface_serial_preserves_existing_entry(hass):
+    entry = registered_entry(hass)
+    result = await select_device(hass)
+    with patch(f"{PATH}._async_validate_input", AsyncMock(return_value=SNAPSHOT)):
+        result = await hass.config_entries.flow.async_configure(
+            result["flow_id"],
+            {key: val for key, val in MOCK_DATA.items() if key != CONF_HOST},
+        )
+    assert result["reason"] == "already_configured"
+    assert entry.unique_id == "original"
+    assert entry.data == MOCK_DATA
     assert len(hass.config_entries.async_entries(DOMAIN)) == 1
 
 

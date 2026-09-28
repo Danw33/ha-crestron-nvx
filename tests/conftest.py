@@ -19,6 +19,14 @@ from custom_components.crestron_nvx.const import CONF_VERIFY_SSL, DOMAIN
 
 pytest_plugins = "pytest_homeassistant_custom_component"
 
+
+@pytest.fixture(autouse=True)
+def mock_ipv4_dns(hass):
+    """Keep address matching deterministic and avoid real DNS in flow tests."""
+    with patch.object(hass.loop, "getaddrinfo", AsyncMock(return_value=[])) as resolver:
+        yield resolver
+
+
 DEVICE_ID = "synthetic-device-id"
 HOST = "nvx.example.local"
 MOCK_DATA = {
