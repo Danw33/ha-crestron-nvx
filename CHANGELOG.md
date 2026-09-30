@@ -7,16 +7,18 @@ and uses semantic versioning for releases.
 
 ### Added
 
+- Optional Audio source configuration select, disabled by default, with
+  model/mode/topology-filtered choices and verified configured-state feedback.
+  No source writes occur during setup, enabling or reload.
 - Optional Video source configuration select, disabled by default, with
   capability-filtered options and verified configured-state feedback.
   Automatic input routing must be disabled separately in the device web UI;
   setup, enabling the entity and reload never change a source.
-
-- Initial support for device control (read/write rather than read-only)
 - Optional Device LEDs configuration switch, disabled by default and available
   only when LED state is reported. The existing LED binary sensor is preserved.
 - Serialized, identity-checked LED writes with verified readback, translated
   errors, and no writes on setup, discovery, reload or state restoration.
+- Initial support for device control (read/write rather than read-only)
 
 ### Changed
 

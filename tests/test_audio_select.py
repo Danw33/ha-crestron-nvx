@@ -1,4 +1,4 @@
-"""Source controls use observed state and never write during lifecycle events."""
+"""Audio source entities publish confirmed state and guard actions."""
 
 import asyncio
 from dataclasses import replace
@@ -19,72 +19,74 @@ from homeassistant.helpers import entity_registry as er
 
 from custom_components.crestron_nvx.const import DOMAIN
 from custom_components.crestron_nvx.select import (
-    NvxVideoSourceSelect,
+    NvxAudioSourceSelect,
     async_setup_entry,
 )
 
 from .conftest import DEVICE_ID, SNAPSHOT
 from .test_switch import coordinator
 
-SOURCE = replace(
+AUDIO = replace(
     SNAPSHOT,
-    device_mode="Transmitter",
-    video_source="None",
+    audio_source="AudioFollowsVideo",
+    audio_mode="Insert",
     auto_input_routing_enabled=False,
     av_ports=(NvxAvPort("input_slot0_hdmi_0", "INPUT 1", "input"),),
 )
 
 
-def source_coordinator(hass, entry):
+def audio_coordinator(hass, entry):
     coord = coordinator(hass, entry)
-    coord.async_set_updated_data(SOURCE)
-    coord.client.async_set_video_source = AsyncMock(
-        return_value=replace(SOURCE, video_source="Input1")
+    coord.async_set_updated_data(AUDIO)
+    coord.client.async_set_audio_source = AsyncMock(
+        return_value=replace(AUDIO, audio_source="Input1")
     )
     return coord
 
 
-async def test_properties_and_verified_action(hass, mock_config_entry):
-    coord = source_coordinator(hass, mock_config_entry)
-    entity = NvxVideoSourceSelect(coord)
-    assert entity.unique_id == f"{DEVICE_ID}_video_source_control"
+async def test_entity_actions_publish_configured_not_active(hass, mock_config_entry):
+    coord = audio_coordinator(hass, mock_config_entry)
+    entity = NvxAudioSourceSelect(coord)
+    assert entity.unique_id == f"{DEVICE_ID}_audio_source_control"
     assert entity.entity_category is EntityCategory.CONFIG
-    assert not entity.entity_registry_enabled_default
-    assert entity.options == ["None", "Input1"]
-    assert entity.current_option == "None"
+    assert entity.entity_registry_enabled_default is False
+    assert entity.options == [
+        "AudioFollowsVideo",
+        "Input1",
+        "AnalogAudio",
+        "PrimaryStreamAudio",
+    ]
+    assert entity.current_option == "AudioFollowsVideo"
     await entity.async_select_option("Input1")
-    coord.client.async_set_video_source.assert_awaited_once_with(
+    coord.client.async_set_audio_source.assert_awaited_once_with(
         "Input1", expected_device_id=DEVICE_ID
     )
     assert entity.current_option == "Input1"
 
 
-async def test_missing_and_invalid_options(hass, mock_config_entry):
-    coord = source_coordinator(hass, mock_config_entry)
+async def test_unrecognized_state_and_option_cannot_write(hass, mock_config_entry):
+    coord = audio_coordinator(hass, mock_config_entry)
     mock_config_entry.runtime_data = coord
-    entity = NvxVideoSourceSelect(coord)
-    add = MagicMock()
-    await async_setup_entry(hass, mock_config_entry, add)
-    add.assert_called_once()
+    entity = NvxAudioSourceSelect(coord)
     with pytest.raises(ServiceValidationError):
-        await entity.async_select_option("Input2")
-    coord.async_set_updated_data(replace(SOURCE, video_source=None))
+        await entity.async_select_option("SecondaryStreamAudio")
+    coord.async_set_updated_data(replace(AUDIO, audio_source="NoAudioSelected"))
     assert not entity.available
     assert entity.current_option is None
-    add.reset_mock()
+    add = MagicMock()
     await async_setup_entry(hass, mock_config_entry, add)
     assert all(
-        not isinstance(candidate, NvxVideoSourceSelect)
+        not isinstance(entity, NvxAudioSourceSelect)
         for call in add.call_args_list
-        for candidate in call.args[0]
+        for entity in call.args[0]
     )
     with pytest.raises(ServiceValidationError):
         await entity.async_select_option("Input1")
-    coord.client.async_set_video_source.assert_not_awaited()
+    coord.client.async_set_audio_source.assert_not_awaited()
 
 
 @pytest.mark.parametrize(
-    "error,expected",
+    ("error", "expected"),
     [
         (NvxControlUnsupported(), ServiceValidationError),
         (NvxPermissionError(), HomeAssistantError),
@@ -92,10 +94,12 @@ async def test_missing_and_invalid_options(hass, mock_config_entry):
         (NvxAuthenticationError(), HomeAssistantError),
     ],
 )
-async def test_errors_preserve_monitoring(hass, mock_config_entry, error, expected):
-    coord = source_coordinator(hass, mock_config_entry)
-    coord.client.async_set_video_source.side_effect = error
-    entity = NvxVideoSourceSelect(coord)
+async def test_failed_action_preserves_observed_state(
+    hass, mock_config_entry, error, expected
+):
+    coord = audio_coordinator(hass, mock_config_entry)
+    coord.client.async_set_audio_source.side_effect = error
+    entity = NvxAudioSourceSelect(coord)
     entity.hass = hass
     with (
         patch.object(mock_config_entry, "async_start_reauth") as reauth,
@@ -104,28 +108,28 @@ async def test_errors_preserve_monitoring(hass, mock_config_entry, error, expect
         await entity.async_select_option("Input1")
     assert reauth.call_count == int(isinstance(error, NvxAuthenticationError))
     assert coord.last_update_success
-    assert entity.current_option == "None"
+    assert entity.current_option == "AudioFollowsVideo"
 
 
-async def test_registry_enable_service_reload_unload(
+async def test_disabled_registration_enable_service_reload_unload(
     hass, mock_config_entry, mock_client
 ):
     with (
         patch(
             "custom_components.crestron_nvx.NvxClient.async_get_snapshot",
-            return_value=SOURCE,
+            return_value=AUDIO,
         ),
         patch(
-            "crestron_nvx.NvxClient.async_set_video_source",
+            "crestron_nvx.NvxClient.async_set_audio_source",
             new_callable=AsyncMock,
-            return_value=replace(SOURCE, video_source="Input1"),
+            return_value=replace(AUDIO, audio_source="Input1"),
         ) as write,
     ):
         assert await hass.config_entries.async_setup(mock_config_entry.entry_id)
         await hass.async_block_till_done()
         registry = er.async_get(hass)
         entity_id = registry.async_get_entity_id(
-            "select", DOMAIN, f"{DEVICE_ID}_video_source_control"
+            "select", DOMAIN, f"{DEVICE_ID}_audio_source_control"
         )
         assert (
             registry.async_get(entity_id).disabled_by
@@ -135,7 +139,7 @@ async def test_registry_enable_service_reload_unload(
         await hass.config_entries.async_reload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
         write.assert_not_awaited()
-        assert hass.states.get(entity_id).state == "None"
+        assert hass.states.get(entity_id).state == "AudioFollowsVideo"
         await hass.services.async_call(
             "select",
             "select_option",
@@ -147,8 +151,8 @@ async def test_registry_enable_service_reload_unload(
         assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
 
 
-async def test_poll_ordering_and_cancellation(hass, mock_config_entry):
-    coord = source_coordinator(hass, mock_config_entry)
+async def test_poll_serialization_and_cancel_release_lock(hass, mock_config_entry):
+    coord = audio_coordinator(hass, mock_config_entry)
     entered, release = asyncio.Event(), asyncio.Event()
 
     async def preview():
@@ -159,13 +163,13 @@ async def test_poll_ordering_and_cancellation(hass, mock_config_entry):
     coord.client.async_get_preview_info.side_effect = preview
     poll = asyncio.create_task(coord.async_refresh())
     await entered.wait()
-    command = asyncio.create_task(coord.async_set_video_source("Input1"))
+    command = asyncio.create_task(coord.async_set_audio_source("Input1"))
     await asyncio.sleep(0)
-    coord.client.async_set_video_source.assert_not_awaited()
+    coord.client.async_set_audio_source.assert_not_awaited()
     release.set()
     await asyncio.gather(poll, command)
-    assert coord.data.video_source == "Input1"
-    coord.client.async_set_video_source.side_effect = asyncio.CancelledError
+    assert coord.data.audio_source == "Input1"
+    coord.client.async_set_audio_source.side_effect = asyncio.CancelledError
     with pytest.raises(asyncio.CancelledError):
-        await coord.async_set_video_source("None")
+        await coord.async_set_audio_source("AudioFollowsVideo")
     assert not coord._operation_lock.locked()

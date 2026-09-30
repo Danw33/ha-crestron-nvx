@@ -77,6 +77,16 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
             )
             self.async_set_updated_data(snapshot)
 
+    async def async_set_audio_source(self, source: str) -> None:
+        """Serialize audio selection with polling and publish verified state."""
+        async with self._operation_lock:
+            snapshot = await self.client.async_set_audio_source(
+                source,
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
+            self.async_set_updated_data(snapshot)
+
     async def _async_read_data(self) -> NvxSnapshot:
         """Read while holding the operation lock, including optional preview."""
 

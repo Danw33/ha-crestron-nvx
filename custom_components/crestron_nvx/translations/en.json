@@ -89,6 +89,10 @@
     "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "exceptions": {
+    "audio_source_unavailable": {"message": "The requested audio source is unavailable. No command was sent."},
+    "audio_source_unsupported": {"message": "The source is unsupported or automatic input routing is enabled or unknown. Check the device web UI and the current audio source before retrying."},
+    "audio_source_auth_failed": {"message": "Authentication failed. Reauthenticate and check the configured audio source before retrying."},
+    "audio_source_failed": {"message": "The audio source command failed or could not be verified. Check permissions and the device state before retrying; the change may already have occurred."},
     "video_source_unavailable": {"message": "The requested video source is unavailable. No command was sent."},
     "video_source_unsupported": {"message": "The source is unsupported or automatic input routing is enabled or unknown. Check the device web UI and disable automatic input routing before changing sources. Check the current source before retrying."},
     "video_source_auth_failed": {"message": "Authentication failed. Reauthenticate and check the configured video source before retrying."},
@@ -100,6 +104,10 @@
   },
   "entity": {
     "select": {
+      "audio_source": {
+        "name": "Audio source",
+        "state": {"AudioFollowsVideo": "Audio follows video", "Input1": "Input 1", "Input2": "Input 2", "AnalogAudio": "Analog audio", "PrimaryStreamAudio": "Primary stream audio"}
+      },
       "video_source": {
         "name": "Video source",
         "state": {"None": "None", "Input1": "Input 1", "Input2": "Input 2", "Stream": "Stream"}

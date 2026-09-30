@@ -1,4 +1,4 @@
-"""Explicit configured video-source selection, separate from active telemetry."""
+"""Explicit configured A/V source selection, separate from active telemetry."""
 
 from typing import override
 
@@ -23,8 +23,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Register only for recognized sources on supported hardware."""
+    entities: list[NvxVideoSourceSelect | NvxAudioSourceSelect] = []
     if entry.runtime_data.data.video_source_options:
-        async_add_entities([NvxVideoSourceSelect(entry.runtime_data)])
+        entities.append(NvxVideoSourceSelect(entry.runtime_data))
+    if entry.runtime_data.data.audio_source_options:
+        entities.append(NvxAudioSourceSelect(entry.runtime_data))
+    if entities:
+        async_add_entities(entities)
 
 
 class NvxVideoSourceSelect(CrestronNvxEntity, SelectEntity):
@@ -73,4 +78,53 @@ class NvxVideoSourceSelect(CrestronNvxEntity, SelectEntity):
         except NvxApiError as err:
             raise HomeAssistantError(
                 translation_domain=DOMAIN, translation_key="video_source_failed"
+            ) from err
+
+
+class NvxAudioSourceSelect(CrestronNvxEntity, SelectEntity):
+    """Primary audio source with observed state and explicit actions only."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_entity_registry_enabled_default = False
+    _attr_translation_key = "audio_source"
+
+    def __init__(self, coordinator: CrestronNvxCoordinator) -> None:
+        super().__init__(coordinator, "audio_source_control")
+
+    @property
+    @override
+    def options(self) -> list[str]:
+        return list(self.coordinator.data.audio_source_options)
+
+    @property
+    @override
+    def current_option(self) -> str | None:
+        source = self.coordinator.data.audio_source
+        return source if source in self.options else None
+
+    @property
+    @override
+    def available(self) -> bool:
+        return super().available and bool(self.options)
+
+    @override
+    async def async_select_option(self, option: str) -> None:
+        if not self.available or option not in self.options:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="audio_source_unavailable"
+            )
+        try:
+            await self.coordinator.async_set_audio_source(option)
+        except NvxControlUnsupported as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="audio_source_unsupported"
+            ) from err
+        except NvxAuthenticationError as err:
+            self.coordinator.config_entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="audio_source_auth_failed"
+            ) from err
+        except NvxApiError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="audio_source_failed"
             ) from err
