@@ -2,7 +2,7 @@
 
 from typing import override
 
-from homeassistant.components.button import ButtonEntity
+from homeassistant.components.button import ButtonDeviceClass, ButtonEntity
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -31,6 +31,7 @@ class NvxRebootButton(CrestronNvxEntity, ButtonEntity):
     """A disabled diagnostic action that never runs during setup or polling."""
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_device_class = ButtonDeviceClass.RESTART
     _attr_entity_registry_enabled_default = False
     _attr_translation_key = "reboot"
 

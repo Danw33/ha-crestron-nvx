@@ -50,13 +50,13 @@ async def test_properties_and_verified_action(hass, mock_config_entry):
     assert entity.unique_id == f"{DEVICE_ID}_video_source_control"
     assert entity.entity_category is EntityCategory.CONFIG
     assert not entity.entity_registry_enabled_default
-    assert entity.options == ["None", "Input1"]
-    assert entity.current_option == "None"
-    await entity.async_select_option("Input1")
+    assert entity.options == ["none", "input_1"]
+    assert entity.current_option == "none"
+    await entity.async_select_option("input_1")
     coord.client.async_set_video_source.assert_awaited_once_with(
         "Input1", expected_device_id=DEVICE_ID
     )
-    assert entity.current_option == "Input1"
+    assert entity.current_option == "input_1"
 
 
 async def test_missing_and_invalid_options(hass, mock_config_entry):
@@ -67,7 +67,7 @@ async def test_missing_and_invalid_options(hass, mock_config_entry):
     await async_setup_entry(hass, mock_config_entry, add)
     add.assert_called_once()
     with pytest.raises(ServiceValidationError):
-        await entity.async_select_option("Input2")
+        await entity.async_select_option("input_2")
     coord.async_set_updated_data(replace(SOURCE, video_source=None))
     assert not entity.available
     assert entity.current_option is None
@@ -79,7 +79,7 @@ async def test_missing_and_invalid_options(hass, mock_config_entry):
         for candidate in call.args[0]
     )
     with pytest.raises(ServiceValidationError):
-        await entity.async_select_option("Input1")
+        await entity.async_select_option("input_1")
     coord.client.async_set_video_source.assert_not_awaited()
 
 
@@ -101,10 +101,10 @@ async def test_errors_preserve_monitoring(hass, mock_config_entry, error, expect
         patch.object(mock_config_entry, "async_start_reauth") as reauth,
         pytest.raises(expected),
     ):
-        await entity.async_select_option("Input1")
+        await entity.async_select_option("input_1")
     assert reauth.call_count == int(isinstance(error, NvxAuthenticationError))
     assert coord.last_update_success
-    assert entity.current_option == "None"
+    assert entity.current_option == "none"
 
 
 async def test_registry_enable_service_reload_unload(
@@ -135,15 +135,15 @@ async def test_registry_enable_service_reload_unload(
         await hass.config_entries.async_reload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
         write.assert_not_awaited()
-        assert hass.states.get(entity_id).state == "None"
+        assert hass.states.get(entity_id).state == "none"
         await hass.services.async_call(
             "select",
             "select_option",
-            {"entity_id": entity_id, "option": "Input1"},
+            {"entity_id": entity_id, "option": "input_1"},
             blocking=True,
         )
         write.assert_awaited_once_with("Input1", expected_device_id=DEVICE_ID)
-        assert hass.states.get(entity_id).state == "Input1"
+        assert hass.states.get(entity_id).state == "input_1"
         assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
 
 

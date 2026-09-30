@@ -16,6 +16,23 @@ from .entity import CrestronNvxEntity
 
 PARALLEL_UPDATES = 1
 
+# HA option IDs must be valid translation keys; API values are case-sensitive.
+VIDEO_SOURCE_TO_API = {
+    "none": "None",
+    "input_1": "Input1",
+    "input_2": "Input2",
+    "stream": "Stream",
+}
+AUDIO_SOURCE_TO_API = {
+    "audio_follows_video": "AudioFollowsVideo",
+    "input_1": "Input1",
+    "input_2": "Input2",
+    "analog_audio": "AnalogAudio",
+    "primary_stream_audio": "PrimaryStreamAudio",
+}
+VIDEO_SOURCE_FROM_API = {value: key for key, value in VIDEO_SOURCE_TO_API.items()}
+AUDIO_SOURCE_FROM_API = {value: key for key, value in AUDIO_SOURCE_TO_API.items()}
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -45,12 +62,16 @@ class NvxVideoSourceSelect(CrestronNvxEntity, SelectEntity):
     @property
     @override
     def options(self) -> list[str]:
-        return list(self.coordinator.data.video_source_options)
+        return [
+            VIDEO_SOURCE_FROM_API[source]
+            for source in self.coordinator.data.video_source_options
+            if source in VIDEO_SOURCE_FROM_API
+        ]
 
     @property
     @override
     def current_option(self) -> str | None:
-        source = self.coordinator.data.video_source
+        source = VIDEO_SOURCE_FROM_API.get(self.coordinator.data.video_source or "")
         return source if source in self.options else None
 
     @property
@@ -65,7 +86,7 @@ class NvxVideoSourceSelect(CrestronNvxEntity, SelectEntity):
                 translation_domain=DOMAIN, translation_key="video_source_unavailable"
             )
         try:
-            await self.coordinator.async_set_video_source(option)
+            await self.coordinator.async_set_video_source(VIDEO_SOURCE_TO_API[option])
         except NvxControlUnsupported as err:
             raise ServiceValidationError(
                 translation_domain=DOMAIN, translation_key="video_source_unsupported"
@@ -94,12 +115,16 @@ class NvxAudioSourceSelect(CrestronNvxEntity, SelectEntity):
     @property
     @override
     def options(self) -> list[str]:
-        return list(self.coordinator.data.audio_source_options)
+        return [
+            AUDIO_SOURCE_FROM_API[source]
+            for source in self.coordinator.data.audio_source_options
+            if source in AUDIO_SOURCE_FROM_API
+        ]
 
     @property
     @override
     def current_option(self) -> str | None:
-        source = self.coordinator.data.audio_source
+        source = AUDIO_SOURCE_FROM_API.get(self.coordinator.data.audio_source or "")
         return source if source in self.options else None
 
     @property
@@ -114,7 +139,7 @@ class NvxAudioSourceSelect(CrestronNvxEntity, SelectEntity):
                 translation_domain=DOMAIN, translation_key="audio_source_unavailable"
             )
         try:
-            await self.coordinator.async_set_audio_source(option)
+            await self.coordinator.async_set_audio_source(AUDIO_SOURCE_TO_API[option])
         except NvxControlUnsupported as err:
             raise ServiceValidationError(
                 translation_domain=DOMAIN, translation_key="audio_source_unsupported"

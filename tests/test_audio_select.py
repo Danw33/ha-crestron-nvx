@@ -51,17 +51,17 @@ async def test_entity_actions_publish_configured_not_active(hass, mock_config_en
     assert entity.entity_category is EntityCategory.CONFIG
     assert entity.entity_registry_enabled_default is False
     assert entity.options == [
-        "AudioFollowsVideo",
-        "Input1",
-        "AnalogAudio",
-        "PrimaryStreamAudio",
+        "audio_follows_video",
+        "input_1",
+        "analog_audio",
+        "primary_stream_audio",
     ]
-    assert entity.current_option == "AudioFollowsVideo"
-    await entity.async_select_option("Input1")
+    assert entity.current_option == "audio_follows_video"
+    await entity.async_select_option("input_1")
     coord.client.async_set_audio_source.assert_awaited_once_with(
         "Input1", expected_device_id=DEVICE_ID
     )
-    assert entity.current_option == "Input1"
+    assert entity.current_option == "input_1"
 
 
 async def test_unrecognized_state_and_option_cannot_write(hass, mock_config_entry):
@@ -81,7 +81,7 @@ async def test_unrecognized_state_and_option_cannot_write(hass, mock_config_entr
         for entity in call.args[0]
     )
     with pytest.raises(ServiceValidationError):
-        await entity.async_select_option("Input1")
+        await entity.async_select_option("input_1")
     coord.client.async_set_audio_source.assert_not_awaited()
 
 
@@ -105,10 +105,10 @@ async def test_failed_action_preserves_observed_state(
         patch.object(mock_config_entry, "async_start_reauth") as reauth,
         pytest.raises(expected),
     ):
-        await entity.async_select_option("Input1")
+        await entity.async_select_option("input_1")
     assert reauth.call_count == int(isinstance(error, NvxAuthenticationError))
     assert coord.last_update_success
-    assert entity.current_option == "AudioFollowsVideo"
+    assert entity.current_option == "audio_follows_video"
 
 
 async def test_disabled_registration_enable_service_reload_unload(
@@ -139,15 +139,15 @@ async def test_disabled_registration_enable_service_reload_unload(
         await hass.config_entries.async_reload(mock_config_entry.entry_id)
         await hass.async_block_till_done()
         write.assert_not_awaited()
-        assert hass.states.get(entity_id).state == "AudioFollowsVideo"
+        assert hass.states.get(entity_id).state == "audio_follows_video"
         await hass.services.async_call(
             "select",
             "select_option",
-            {"entity_id": entity_id, "option": "Input1"},
+            {"entity_id": entity_id, "option": "input_1"},
             blocking=True,
         )
         write.assert_awaited_once_with("Input1", expected_device_id=DEVICE_ID)
-        assert hass.states.get(entity_id).state == "Input1"
+        assert hass.states.get(entity_id).state == "input_1"
         assert await hass.config_entries.async_unload(mock_config_entry.entry_id)
 
 

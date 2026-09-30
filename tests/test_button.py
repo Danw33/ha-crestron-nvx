@@ -12,6 +12,7 @@ from crestron_nvx import (
     NvxPermissionError,
     NvxPreviewInfo,
 )
+from homeassistant.components.button import ButtonDeviceClass
 from homeassistant.const import EntityCategory
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import entity_registry as er
@@ -36,6 +37,7 @@ async def test_button_is_disabled_diagnostic_with_stable_identity(
     button = NvxRebootButton(coord)
     assert button.unique_id == f"{DEVICE_ID}_reboot_control"
     assert button.entity_category is EntityCategory.DIAGNOSTIC
+    assert button.device_class is ButtonDeviceClass.RESTART
     assert button.entity_registry_enabled_default is False
     await button.async_press()
     coord.client.async_reboot.assert_awaited_once_with(expected_device_id=DEVICE_ID)

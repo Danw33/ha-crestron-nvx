@@ -113,11 +113,11 @@
     "select": {
       "audio_source": {
         "name": "Audio source",
-        "state": {"AudioFollowsVideo": "Audio follows video", "Input1": "Input 1", "Input2": "Input 2", "AnalogAudio": "Analog audio", "PrimaryStreamAudio": "Primary stream audio"}
+        "state": {"audio_follows_video": "Audio follows video", "input_1": "Input 1", "input_2": "Input 2", "analog_audio": "Analog audio", "primary_stream_audio": "Primary stream audio"}
       },
       "video_source": {
         "name": "Video source",
-        "state": {"None": "None", "Input1": "Input 1", "Input2": "Input 2", "Stream": "Stream"}
+        "state": {"none": "None", "input_1": "Input 1", "input_2": "Input 2", "stream": "Stream"}
       }
     },
     "switch": {

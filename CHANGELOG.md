@@ -26,6 +26,14 @@ and uses semantic versioning for releases.
 ### Changed
 
 - Require `crestron-nvx==0.4.0` (publish the library before this HA update).
+- Mark the Reboot button with Home Assistant's restart device class.
+
+### Fixed
+
+- Use translation-safe lowercase option IDs for video and audio source selects,
+  mapping them to case-sensitive API values only when sending commands. This
+  fixes hassfest validation without changing entity identities or display labels.
+  Automations using the unreleased selects must use the new option IDs.
 
 ## [0.6.0] - 2026-09-28
 
