@@ -89,12 +89,22 @@
     "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "exceptions": {
+    "video_source_unavailable": {"message": "The requested video source is unavailable. No command was sent."},
+    "video_source_unsupported": {"message": "The source is unsupported or automatic input routing is enabled or unknown. Check the device web UI and disable automatic input routing before changing sources. Check the current source before retrying."},
+    "video_source_auth_failed": {"message": "Authentication failed. Reauthenticate and check the configured video source before retrying."},
+    "video_source_failed": {"message": "The video source command failed or could not be verified. Check permissions and the device state before retrying; the change may already have occurred."},
     "leds_unavailable": {"message": "Device LED state is unavailable. No command was sent."},
     "leds_unsupported": {"message": "This endpoint does not permit LED control."},
     "leds_auth_failed": {"message": "Authentication failed. Reauthenticate the endpoint and check its LED state before retrying."},
     "leds_failed": {"message": "The LED command failed or could not be verified. Check permissions and the current device state before retrying; the change may already have occurred."}
   },
   "entity": {
+    "select": {
+      "video_source": {
+        "name": "Video source",
+        "state": {"None": "None", "Input1": "Input 1", "Input2": "Input 2", "Stream": "Stream"}
+      }
+    },
     "switch": {
       "device_leds": {"name": "Device LEDs"}
     },

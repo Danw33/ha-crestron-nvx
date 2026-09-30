@@ -67,6 +67,16 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
         async with self._operation_lock:
             return await self._async_read_data()
 
+    async def async_set_video_source(self, source: str) -> None:
+        """Serialize source selection with polling and publish verified state."""
+        async with self._operation_lock:
+            snapshot = await self.client.async_set_video_source(
+                source,
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
+            self.async_set_updated_data(snapshot)
+
     async def _async_read_data(self) -> NvxSnapshot:
         """Read while holding the operation lock, including optional preview."""
 
