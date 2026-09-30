@@ -4,6 +4,7 @@ import argparse
 import ast
 import hashlib
 import json
+import re
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -14,7 +15,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--library", type=Path, default=root.parent / "py-crestron-nvx")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--version", required=True, help="Private prerelease, e.g. 0.7.0b1"
+    )
     args = parser.parse_args()
+    if not re.fullmatch(r"\d+\.\d+\.\d+(?:a|b|rc)\d+", args.version):
+        parser.error("--version must be a prerelease such as 0.7.0b1")
     component = root / "custom_components" / "crestron_nvx"
     prefix = "custom_components/crestron_nvx/"
     files: dict[str, bytes] = {}
@@ -33,7 +39,7 @@ def main() -> None:
         files[prefix + path.relative_to(component).as_posix()] = data
     manifest = json.loads(files[prefix + "manifest.json"])
     manifest["requirements"] = []
-    manifest["version"] = "0.2.0b2"
+    manifest["version"] = args.version
     files[prefix + "manifest.json"] = (json.dumps(manifest, indent=2) + "\n").encode()
     library = args.library / "src" / "crestron_nvx"
     for path in sorted(library.iterdir()):
@@ -44,11 +50,11 @@ def main() -> None:
         files[prefix + "_client/" + name] = (args.library / name).read_bytes()
         files[prefix + name] = (root / name).read_bytes()
     files[prefix + "LOCAL_TEST_BUILD.txt"] = (
-        b"0.2.0b2 private test build. Bundles the unreleased crestron-nvx client.\n"
-        b"No PyPI dependency or HACS release required. aiohttp/yarl come from HA.\n"
-        b"Replace the complete integration directory when returning to a release.\n"
-        b"Unofficial community integration; not affiliated with or supported by Crestron.\n"
-    )
+        f"{args.version} private test build. Bundles the unreleased crestron-nvx client.\n"
+        "No PyPI dependency or HACS release required. aiohttp/yarl come from HA.\n"
+        "Replace the complete integration directory when returning to a release.\n"
+        "Unofficial community integration; not affiliated with or supported by Crestron.\n"
+    ).encode()
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(args.output, "x", ZIP_DEFLATED) as archive:
         for name, data in sorted(files.items()):

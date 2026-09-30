@@ -5,6 +5,8 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-09-30
+
 ### Added
 
 - Disabled-by-default Start receiving/Stop receiving or Start transmitting/Stop
@@ -31,6 +33,7 @@ and uses semantic versioning for releases.
 - Serialized, identity-checked LED writes with verified readback, translated
   errors, and no writes on setup, discovery, reload or state restoration.
 - Initial support for device control (read/write rather than read-only)
+- Standalone test ZIP builder accepts an explicit private prerelease version.
 
 ### Changed
 
@@ -42,7 +45,17 @@ and uses semantic versioning for releases.
 - Use translation-safe lowercase option IDs for video and audio source selects,
   mapping them to case-sensitive API values only when sending commands. This
   fixes hassfest validation without changing entity identities or display labels.
-  Automations using the unreleased selects must use the new option IDs.
+  Automations using earlier private builds must use the new option IDs.
+
+### Validation and upgrade notes
+
+- LED off/on was hardware-tested. Primary routing was verified on a receiving
+  350 between transmitting 350 and E30 devices; installation of the standalone
+  checkpoint succeeded. Live start/stop, reboot and successful video/audio
+  source writes remain to be validated. All new controls are disabled by default.
+- Publish `crestron-nvx` 0.4.0 before installing this release. When replacing a
+  private ZIP build manually, replace the complete integration directory to
+  remove the bundled `_client`; published installations use the PyPI dependency.
 
 ## [0.6.0] - 2026-09-28
 
