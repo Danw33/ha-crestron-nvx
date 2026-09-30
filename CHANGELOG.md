@@ -7,6 +7,10 @@ and uses semantic versioning for releases.
 
 ### Added
 
+- Disabled-by-default Start receiving/Stop receiving or Start transmitting/Stop
+  transmitting buttons for the primary stream in the current device mode.
+  Commands are serialized with polling, identity-checked and verified against
+  reported stream status. Setup, reload and enabling entities never send commands.
 - Disabled-by-default Receiver stream select on supported receivers, listing
   configured transmitters by name and stable device identity. Transmitter URLs
   are freshly checked before an identity-checked primary-slot write and readback.

@@ -2,7 +2,7 @@
 
 import asyncio
 import logging
-from typing import override
+from typing import Literal, override
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -96,6 +96,19 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
                 expected_device_id=self.config_entry.unique_id
                 or self.data.device.device_id,
             )
+
+    async def async_set_stream_running(
+        self, direction: Literal["receive", "transmit"], running: bool
+    ) -> None:
+        """Serialize explicit stream commands and publish only verified telemetry."""
+        async with self._operation_lock:
+            snapshot = await self.client.async_set_stream_running(
+                direction,
+                running,
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
+            self.async_set_updated_data(snapshot)
 
     @callback
     @override
