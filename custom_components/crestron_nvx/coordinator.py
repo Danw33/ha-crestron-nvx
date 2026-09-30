@@ -87,6 +87,14 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
             )
             self.async_set_updated_data(snapshot)
 
+    async def async_reboot(self) -> None:
+        """Serialize an explicit reboot request with status polling."""
+        async with self._operation_lock:
+            await self.client.async_reboot(
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
+
     async def _async_read_data(self) -> NvxSnapshot:
         """Read while holding the operation lock, including optional preview."""
 

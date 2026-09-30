@@ -7,6 +7,9 @@ and uses semantic versioning for releases.
 
 ### Added
 
+- Disabled-by-default diagnostic Reboot button for supported NVX models. An
+  explicit press sends one identity-checked request; setup, reload and polling
+  never reboot a device. Connection loss can leave the outcome uncertain.
 - Optional Audio source configuration select, disabled by default, with
   model/mode/topology-filtered choices and verified configured-state feedback.
   No source writes occur during setup, enabling or reload.

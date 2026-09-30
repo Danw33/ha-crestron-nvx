@@ -89,6 +89,10 @@
     "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "exceptions": {
+    "reboot_unavailable": {"message": "The endpoint is unavailable. No reboot request was sent."},
+    "reboot_unsupported": {"message": "This endpoint does not support the reboot request."},
+    "reboot_auth_failed": {"message": "Authentication failed. Reauthenticate and check the endpoint before retrying."},
+    "reboot_failed": {"message": "The reboot request failed or its outcome is uncertain. Check the endpoint before pressing again; it may already be restarting."},
     "audio_source_unavailable": {"message": "The requested audio source is unavailable. No command was sent."},
     "audio_source_unsupported": {"message": "The source is unsupported or automatic input routing is enabled or unknown. Check the device web UI and the current audio source before retrying."},
     "audio_source_auth_failed": {"message": "Authentication failed. Reauthenticate and check the configured audio source before retrying."},
@@ -103,6 +107,9 @@
     "leds_failed": {"message": "The LED command failed or could not be verified. Check permissions and the current device state before retrying; the change may already have occurred."}
   },
   "entity": {
+    "button": {
+      "reboot": {"name": "Reboot"}
+    },
     "select": {
       "audio_source": {
         "name": "Audio source",
