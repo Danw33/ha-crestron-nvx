@@ -1,5 +1,6 @@
 """Data coordinator for Crestron DM NVX."""
 
+import asyncio
 import logging
 from typing import override
 
@@ -48,10 +49,26 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
         )
         self.client = client
         self.preview_info = NvxPreviewInfo()
+        self._operation_lock = asyncio.Lock()
+
+    async def async_set_leds_enabled(self, enabled: bool) -> None:
+        """Serialize actions with polling and publish only observed state."""
+        async with self._operation_lock:
+            snapshot = await self.client.async_set_leds_enabled(
+                enabled,
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
+            self.async_set_updated_data(snapshot)
 
     @override
     async def _async_update_data(self) -> NvxSnapshot:
         """Fetch the current read-only endpoint snapshot."""
+        async with self._operation_lock:
+            return await self._async_read_data()
+
+    async def _async_read_data(self) -> NvxSnapshot:
+        """Read while holding the operation lock, including optional preview."""
 
         try:
             snapshot = await self.client.async_get_snapshot()

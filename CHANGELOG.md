@@ -5,6 +5,18 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+### Added
+
+- Initial support for device control (read/write rather than read-only)
+- Optional Device LEDs configuration switch, disabled by default and available
+  only when LED state is reported. The existing LED binary sensor is preserved.
+- Serialized, identity-checked LED writes with verified readback, translated
+  errors, and no writes on setup, discovery, reload or state restoration.
+
+### Changed
+
+- Require `crestron-nvx==0.4.0` (publish the library before this HA update).
+
 ## [0.6.0] - 2026-09-28
 
 ### Fixed

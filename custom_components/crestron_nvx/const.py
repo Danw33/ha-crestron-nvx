@@ -16,6 +16,7 @@ PLATFORMS: tuple[Platform, ...] = (
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
     Platform.IMAGE,
+    Platform.SWITCH,
 )
 
 SUPPORTED_MODELS = frozenset({"DM-NVX-350", "DM-NVX-360", "DM-NVX-E30"})
