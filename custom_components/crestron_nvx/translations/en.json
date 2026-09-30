@@ -89,6 +89,9 @@
     "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "exceptions": {
+    "routing_unavailable": {"message": "The receiver or selected transmitter is unavailable or its identity/capabilities changed. No route command was sent."},
+    "routing_source_failed": {"message": "Could not verify the transmitter. Check its connection and credentials. No route command was sent."},
+    "routing_failed": {"message": "The route could not be verified. Check permissions and that the receiver is idle and configured for multicast via RTSP. Check its stream URL before retrying; the change may already have occurred."},
     "reboot_unavailable": {"message": "The endpoint is unavailable. No reboot request was sent."},
     "reboot_unsupported": {"message": "This endpoint does not support the reboot request."},
     "reboot_auth_failed": {"message": "Authentication failed. Reauthenticate and check the endpoint before retrying."},
@@ -111,6 +114,7 @@
       "reboot": {"name": "Reboot"}
     },
     "select": {
+      "receiver_stream": {"name": "Receiver stream"},
       "audio_source": {
         "name": "Audio source",
         "state": {"audio_follows_video": "Audio follows video", "input_1": "Input 1", "input_2": "Input 2", "analog_audio": "Analog audio", "primary_stream_audio": "Primary stream audio"}

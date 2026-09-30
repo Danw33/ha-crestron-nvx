@@ -13,6 +13,7 @@ from crestron_nvx import NvxApiError, NvxAuthenticationError, NvxControlUnsuppor
 from .const import DOMAIN
 from .coordinator import CrestronNvxConfigEntry, CrestronNvxCoordinator
 from .entity import CrestronNvxEntity
+from .routing import NvxReceiverStreamSelect
 
 PARALLEL_UPDATES = 1
 
@@ -40,7 +41,11 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Register only for recognized sources on supported hardware."""
-    entities: list[NvxVideoSourceSelect | NvxAudioSourceSelect] = []
+    entities: list[
+        NvxVideoSourceSelect | NvxAudioSourceSelect | NvxReceiverStreamSelect
+    ] = []
+    if entry.runtime_data.data.primary_receive_stream is not None:
+        entities.append(NvxReceiverStreamSelect(entry.runtime_data))
     if entry.runtime_data.data.video_source_options:
         entities.append(NvxVideoSourceSelect(entry.runtime_data))
     if entry.runtime_data.data.audio_source_options:

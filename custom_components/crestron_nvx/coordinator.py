@@ -5,8 +5,9 @@ import logging
 from typing import override
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from crestron_nvx import (
@@ -14,12 +15,13 @@ from crestron_nvx import (
     NvxAuthenticationError,
     NvxClient,
     NvxConnectionError,
+    NvxControlError,
     NvxPreviewInfo,
     NvxResponseError,
     NvxSnapshot,
 )
 
-from .const import DEFAULT_SCAN_INTERVAL
+from .const import DEFAULT_SCAN_INTERVAL, SIGNAL_ROUTING_UPDATED
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -94,6 +96,35 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
                 expected_device_id=self.config_entry.unique_id
                 or self.data.device.device_id,
             )
+
+    @callback
+    @override
+    def async_update_listeners(self) -> None:
+        """Refresh routing choices after telemetry or availability changes."""
+        super().async_update_listeners()
+        async_dispatcher_send(self.hass, SIGNAL_ROUTING_UPDATED)
+
+    async def async_set_receive_stream_location(self, location: str) -> None:
+        """Publish verified routing state, serialized against polling."""
+        async with self._operation_lock:
+            snapshot = await self.client.async_set_receive_stream_location(
+                location,
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
+            self.async_set_updated_data(snapshot)
+
+    async def async_read_routing_source(self) -> NvxSnapshot:
+        """Read a transmitter freshly without allowing concurrent control writes."""
+        async with self._operation_lock:
+            expected_id = self.config_entry.unique_id or self.data.device.device_id
+            snapshot = await self.client.async_get_snapshot()
+            if snapshot.device.device_id != expected_id:
+                raise NvxControlError(
+                    "Transmitter identity changed; no route command sent"
+                )
+            self.async_set_updated_data(snapshot)
+            return snapshot
 
     async def _async_read_data(self) -> NvxSnapshot:
         """Read while holding the operation lock, including optional preview."""

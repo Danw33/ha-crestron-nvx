@@ -7,6 +7,11 @@ and uses semantic versioning for releases.
 
 ### Added
 
+- Disabled-by-default Receiver stream select on supported receivers, listing
+  configured transmitters by name and stable device identity. Transmitter URLs
+  are freshly checked before an identity-checked primary-slot write and readback.
+  Choices track setup, unload and telemetry changes; diagnostics redact URLs.
+  Routing does not start streams or change video/audio sources or device mode.
 - Disabled-by-default diagnostic Reboot button for supported NVX models. An
   explicit press sends one identity-checked request; setup, reload and polling
   never reboot a device. Connection loss can leave the outcome uncertain.

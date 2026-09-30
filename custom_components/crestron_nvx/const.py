@@ -5,6 +5,7 @@ from datetime import timedelta
 from homeassistant.const import Platform
 
 DOMAIN = "crestron_nvx"
+SIGNAL_ROUTING_UPDATED = f"{DOMAIN}_routing_updated"
 MANUFACTURER = "Crestron"
 
 CONF_VERIFY_SSL = "verify_ssl"

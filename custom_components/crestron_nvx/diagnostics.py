@@ -30,6 +30,7 @@ async def async_get_config_entry_diagnostics(
     for collection in ("receive_streams", "transmit_streams"):
         for stream in snapshot[collection]:
             stream["stream_id"] = REDACTED
+            stream["stream_location"] = REDACTED
     return {
         "entry": async_redact_data(entry.as_dict(), _TO_REDACT),
         "snapshot": snapshot,
