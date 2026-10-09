@@ -14,7 +14,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network
 from homeassistant.components import network
 from homeassistant.core import HomeAssistant
 
-from .const import SUPPORTED_MODELS
+from crestron_nvx import is_nvx_model
 
 DISCOVERY_PORT = 41794
 MAX_TARGETS = 256
@@ -22,7 +22,7 @@ PROBE = bytes.fromhex("14000000010400030000") + b"ha-nvx-discovery".ljust(256, b
 _LOCK_KEY = "crestron_nvx_discovery_lock"
 _REPLY_TIMEOUT = 3.0
 _SEND_INTERVAL = 0.01
-_MODEL = re.compile(r"^(DM-NVX-[A-Za-z0-9-]+)(?:\s|$)")
+_MODEL = re.compile(r"^(DM-NVX-[A-Za-z0-9-]+)(?:\s|$)", re.IGNORECASE)
 _FIRMWARE = re.compile(r"\[v(\d+(?:\.\d+)+)", re.IGNORECASE)
 _BUILD_DATE = re.compile(
     r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2}\s+\d{4}\b"
@@ -92,7 +92,7 @@ def parse_response(data: bytes, host: str) -> DiscoveredDevice | None:
         or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,254}", hostname)
         or not description.isprintable()
         or not model_match
-        or (model := model_match[1]) not in SUPPORTED_MODELS
+        or not is_nvx_model(model := model_match[1])
     ):
         return None
     firmware = _FIRMWARE.search(description)

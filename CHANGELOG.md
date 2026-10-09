@@ -5,6 +5,15 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+### Changed
+
+- Use the library's observed capabilities for controls and DM NVX family
+  recognition for discovery instead of an exact-model allowlist. D30, 351,
+  352, 363 and unfamiliar DM NVX models are eligible without claiming hardware
+  validation. Entity identities and disabled-by-default settings are unchanged.
+- Pin development tests to the committed capability-library revision pending
+  its PyPI release. Update the release dependency pins before distributing.
+
 ## [0.7.0] - 2026-09-30
 
 ### Added

@@ -44,11 +44,11 @@ async def async_setup_entry(
     entities: list[
         NvxVideoSourceSelect | NvxAudioSourceSelect | NvxReceiverStreamSelect
     ] = []
-    if entry.runtime_data.data.primary_receive_stream is not None:
+    if entry.runtime_data.data.capabilities.receive_routing_stream is not None:
         entities.append(NvxReceiverStreamSelect(entry.runtime_data))
-    if entry.runtime_data.data.video_source_options:
+    if entry.runtime_data.data.capabilities.video_source_options:
         entities.append(NvxVideoSourceSelect(entry.runtime_data))
-    if entry.runtime_data.data.audio_source_options:
+    if entry.runtime_data.data.capabilities.audio_source_options:
         entities.append(NvxAudioSourceSelect(entry.runtime_data))
     if entities:
         async_add_entities(entities)
@@ -69,7 +69,7 @@ class NvxVideoSourceSelect(CrestronNvxEntity, SelectEntity):
     def options(self) -> list[str]:
         return [
             VIDEO_SOURCE_FROM_API[source]
-            for source in self.coordinator.data.video_source_options
+            for source in self.coordinator.data.capabilities.video_source_options
             if source in VIDEO_SOURCE_FROM_API
         ]
 
@@ -122,7 +122,7 @@ class NvxAudioSourceSelect(CrestronNvxEntity, SelectEntity):
     def options(self) -> list[str]:
         return [
             AUDIO_SOURCE_FROM_API[source]
-            for source in self.coordinator.data.audio_source_options
+            for source in self.coordinator.data.capabilities.audio_source_options
             if source in AUDIO_SOURCE_FROM_API
         ]
 

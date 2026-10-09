@@ -31,9 +31,10 @@ from crestron_nvx import (
     NvxConnectionError,
     NvxResponseError,
     NvxSnapshot,
+    is_nvx_model,
 )
 
-from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL, DOMAIN, SUPPORTED_MODELS
+from .const import CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL, DOMAIN
 from .discovery import (
     DiscoveredDevice,
     DiscoveryBusyError,
@@ -213,7 +214,7 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="invalid_discovery")
 
         try:
-            if str(IPv4Address(host)) != host or model not in SUPPORTED_MODELS:
+            if str(IPv4Address(host)) != host or not is_nvx_model(model):
                 return self.async_abort(reason="invalid_discovery")
             device = DiscoveredDevice(
                 host=host,

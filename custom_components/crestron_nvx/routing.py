@@ -16,17 +16,14 @@ from crestron_nvx import (
     is_valid_stream_location,
 )
 
-from .const import DOMAIN, SIGNAL_ROUTING_UPDATED, SUPPORTED_MODELS
+from .const import DOMAIN, SIGNAL_ROUTING_UPDATED
 from .coordinator import CrestronNvxCoordinator
 from .entity import CrestronNvxEntity
 
 
 def primary_transmit_location(snapshot: NvxSnapshot) -> str | None:
     """Never synthesize URLs or treat a receiver's transmit telemetry as a source."""
-    if (
-        snapshot.device_mode != "Transmitter"
-        or snapshot.device.model.upper() not in SUPPORTED_MODELS
-    ):
+    if snapshot.device_mode != "Transmitter" or not snapshot.capabilities.is_nvx:
         return None
     for stream in snapshot.transmit_streams:
         if (
@@ -76,7 +73,7 @@ class NvxReceiverStreamSelect(CrestronNvxEntity, SelectEntity):
     @property
     @override
     def current_option(self) -> str | None:
-        stream = self.coordinator.data.primary_receive_stream
+        stream = self.coordinator.data.capabilities.receive_routing_stream
         if stream is None or not stream.stream_location:
             return None
         matches = [
@@ -91,7 +88,7 @@ class NvxReceiverStreamSelect(CrestronNvxEntity, SelectEntity):
     def available(self) -> bool:
         return (
             super().available
-            and self.coordinator.data.primary_receive_stream is not None
+            and self.coordinator.data.capabilities.receive_routing_stream is not None
             and bool(self.options)
         )
 

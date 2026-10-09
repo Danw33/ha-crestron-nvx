@@ -28,7 +28,20 @@ def test_parse_metadata():
     assert device.label == "living-room — DM-NVX-360 (192.0.2.10)"
 
 
-@pytest.mark.parametrize("model", ["DM-NVX-350", "DM-NVX-360", "DM-NVX-E30"])
+@pytest.mark.parametrize(
+    "model",
+    [
+        "DM-NVX-350",
+        "DM-NVX-360",
+        "DM-NVX-E30",
+        "DM-NVX-D30",
+        "DM-NVX-351",
+        "DM-NVX-352",
+        "DM-NVX-363",
+        "DM-NVX-FUTURE",
+        "dm-nvx-d30",
+    ],
+)
 def test_optional_metadata(model):
     device = d.parse_response(response(description=model), "192.0.2.10")
     assert device.model == model
@@ -48,7 +61,7 @@ def test_optional_metadata(model):
         response(hostname="café"),
         response(description="DM-NVX-360\n" + "bad"),
         response(description="CP3 [v1.2.3]"),
-        response(description="DM-NVX-UNKNOWN"),
+        response(description="DM-NVX--INVALID"),
     ],
 )
 def test_reject_bad_or_unsupported_packets(payload):

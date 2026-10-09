@@ -6,8 +6,9 @@
 [![Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
 An early-stage custom integration for direct, local monitoring of Crestron
-DM NVX AV-over-IP endpoints. The initial supported devices are DM-NVX-350,
-DM-NVX-360, and DM-NVX-E30 endpoints running firmware 6.0 or 7.1.
+DM NVX AV-over-IP endpoints. Controls are selected from the capabilities reported
+by each endpoint, not an exact-model allowlist. Live validation currently covers
+DM-NVX-350/360 on firmware 7.1 and DM-NVX-E30 on firmware 6.0.
 
 > [!IMPORTANT]
 > This is an independent, unofficial community integration. It is not
@@ -73,15 +74,16 @@ do not change device configuration. Device mode control is not implemented.
 
 LED off/on has been physically tested (the tested model/firmware combinations
 remain to be recorded). Routing was tested on a receiving 350 with 350 and E30
-transmitters. Successful source-selection writes, reboot and stream start/stop
-still need hardware validation. Treat those controls as experimental and test
+transmitters; a subsequent E30 test-pattern playback issue remains unresolved.
+Reboot has been physically tested. Successful source-selection writes and stream
+start/stop still need hardware validation. Treat those controls as experimental and test
 on an idle endpoint before using them in automations.
 
 ### Optional Receiver stream select
 
-Enable **Receiver stream** on a DM-NVX-350/360 receiver. Choices are primary
-streams advertised by supported transmitters already configured and available
-in HA (350, 360 or E30). Labels use the HA device's custom name, falling back to
+Enable **Receiver stream** on a capability-compatible DM NVX receiver. Choices
+are primary streams advertised by transmitters already configured and available
+in HA with the required capabilities. Labels use the HA device's custom name, falling back to
 the integration entry title, plus device identity to distinguish duplicate names.
 Adding a transmitter to HA does not route it automatically.
 
@@ -112,8 +114,8 @@ public [StreamReceive API](https://sdkcon78221.crestron.com/sdk/DM_NVX_REST_API/
 Enable **Start receiving** / **Stop receiving** on a receiver, or **Start
 transmitting** / **Stop transmitting** on a transmitter. These operational
 buttons are disabled by default and affect only primary stream slot 0. The
-350/360 support their current receiver or transmitter direction; E30 supports
-transmitting only. Opposite-direction telemetry is never treated as a capability.
+Eligibility follows the reported receiver or transmitter mode and addressable
+stream fields, rather than a model list. Opposite-direction telemetry is never treated as a capability.
 After changing device mode externally, reload the entry to register its new
 buttons; existing buttons never silently switch direction.
 
@@ -143,13 +145,14 @@ when one arrives. It does not send factory restore or reset commands.
 Video and audio will be interrupted during a real reboot. The device may close
 its connection before acknowledging the command; if HA reports an uncertain
 outcome, check whether it is already restarting before pressing again. The
-button does not wait for the endpoint to return. Hardware testing is pending.
+button does not wait for the endpoint to return. Reboot has been physically tested;
+this does not establish validation for every model or firmware version.
 
 ### Optional Video source select
 
 Enable **Video source** in entity settings to choose a supported configured
-source. Options use the known model, observed HDMI input slots and current mode;
-Input 2 is not offered on 360/E30, and Stream is offered only in receiver mode.
+source. Options use the library's observed HDMI input slots and current mode;
+Input 2 requires a mapped second input, and Stream is offered only in receiver mode.
 Unknown capabilities are not guessed. The configured selection may differ from
 the existing **Active video source** sensor. Enabling or reloading never writes.
 
@@ -167,9 +170,9 @@ audio configured to follow video. Hardware write validation is still pending.
 ### Optional Audio source select
 
 Enable **Audio source** in entity settings to choose a supported configured
-source. Options depend on the model, mode, observed HDMI inputs and analog
-Insert/Extract mode. The 350/360 receiver may offer primary stream audio; E30
-does not. Secondary stream and NAX audio source choices are deferred until
+source. Options depend on reported mode, observed HDMI inputs and analog
+Insert/Extract mode. Receivers reporting receive streams may offer primary
+stream audio. Secondary stream and NAX audio source choices are deferred until
 their device-specific API values are validated. The select represents the
 configured source; **Active audio source** remains read-only telemetry.
 
@@ -294,9 +297,13 @@ endpoint during removal.
 
 ## Supported devices and functions
 
-DM-NVX-350, DM-NVX-360, and DM-NVX-E30 on firmware 6.0 and 7.1 are the declared
-initial support scope. The shared API shape across these models and firmware
-families is assumed until every combination can be tested directly.
+Discovery accepts DM NVX family model names, including D30, 351, 352, 363 and
+unfamiliar variants. Authenticated library snapshots determine control support;
+UDP metadata is not trusted to grant write capability. The additional models
+are expected to be API-compatible, but have not been hardware-validated here.
+Missing capabilities do not imply a broken device. Existing entities become
+unavailable when their required observations disappear; no settings are written
+to discover support. Some newly appearing controls require an integration reload.
 
 | Model | Firmware | Compatibility evidence |
 | --- | --- | --- |
@@ -308,6 +315,7 @@ families is assumed until every combination can be tested directly.
 | DM-NVX-360 | 7.1 | Supported; payloads and live HA setup/preview operation validated |
 | DM-NVX-E30 | 6.0 | Supported; live HA setup and preview validated |
 | DM-NVX-E30 | 7.1 | Supported by shared-API assumption; direct validation pending |
+| DM-NVX-D30 / 351 / 352 / 363 | API-compatible firmware | Capability-based; hardware validation pending |
 
 Offline replay on 2026-09-29 successfully parsed all 19 supplied full-device
 captures using `crestron-nvx` 0.3.0. No parser-blocking incompatibilities or
@@ -362,7 +370,7 @@ manuals, schemas, examples, firmware, or other proprietary materials.
 - Long polling/WebSocket telemetry is deferred until polling behaviour is
   understood on the target firmware.
 - All controls require explicit opt-in. Hardware validation varies by control
-  and model; see the control sections above. Device mode changes and secondary
+  and observed capabilities; see the control sections above. Device mode changes and secondary
   stream control are not implemented.
 
 ## Troubleshooting

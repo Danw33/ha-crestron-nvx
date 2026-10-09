@@ -23,7 +23,7 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Expose the switch only when a readable boolean capability is present."""
-    if entry.runtime_data.data.leds_enabled is not None:
+    if entry.runtime_data.data.capabilities.leds_control:
         async_add_entities([NvxLedSwitch(entry.runtime_data)])
 
 
@@ -45,7 +45,7 @@ class NvxLedSwitch(CrestronNvxEntity, SwitchEntity):
     @property
     @override
     def available(self) -> bool:
-        return super().available and self.is_on is not None
+        return super().available and self.coordinator.data.capabilities.leds_control
 
     @override
     async def async_turn_on(self, **kwargs: Any) -> None:

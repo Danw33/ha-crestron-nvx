@@ -10,7 +10,7 @@ from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from crestron_nvx import NvxApiError, NvxAuthenticationError, NvxControlUnsupported
 
-from .const import DOMAIN, SUPPORTED_MODELS
+from .const import DOMAIN
 from .coordinator import CrestronNvxConfigEntry, CrestronNvxCoordinator
 from .entity import CrestronNvxEntity
 
@@ -24,7 +24,7 @@ async def async_setup_entry(
 ) -> None:
     """Register commands only for observed capabilities on supported models."""
     entities: list[NvxRebootButton | NvxStreamButton] = []
-    if entry.runtime_data.data.device.model.upper() in SUPPORTED_MODELS:
+    if entry.runtime_data.data.capabilities.reboot:
         entities.append(NvxRebootButton(entry.runtime_data))
     directions: tuple[Literal["receive", "transmit"], ...] = ("receive", "transmit")
     for direction in directions:
@@ -47,6 +47,11 @@ class NvxRebootButton(CrestronNvxEntity, ButtonEntity):
 
     def __init__(self, coordinator: CrestronNvxCoordinator) -> None:
         super().__init__(coordinator, "reboot_control")
+
+    @property
+    @override
+    def available(self) -> bool:
+        return super().available and self.coordinator.data.capabilities.reboot
 
     @override
     async def async_press(self) -> None:

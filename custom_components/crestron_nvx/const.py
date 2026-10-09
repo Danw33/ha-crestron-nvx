@@ -21,5 +21,3 @@ PLATFORMS: tuple[Platform, ...] = (
     Platform.SELECT,
     Platform.BUTTON,
 )
-
-SUPPORTED_MODELS = frozenset({"DM-NVX-350", "DM-NVX-360", "DM-NVX-E30"})
