@@ -1,4 +1,4 @@
-homeassistant==2026.9.2
+homeassistant==2026.9.4
 # Development checkpoint; replace with a PyPI pin alongside manifest/audit pins at release.
 crestron-nvx @ git+https://github.com/Danw33/py-crestron-nvx.git@2d93f5627ef393181b58bed5c5b9b84fe604c53b
 pytest==9.0.3
