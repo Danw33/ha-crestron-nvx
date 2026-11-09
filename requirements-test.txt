@@ -4,5 +4,5 @@ crestron-nvx @ git+https://github.com/Danw33/py-crestron-nvx.git@2d93f5627ef3931
 pytest-cov==7.1.0
 # Owns the matching pytest and pytest-asyncio pins.
 pytest-homeassistant==2026.11.0
-ruff==0.16.8
+ruff==0.17.4
 mypy==2.4.1
