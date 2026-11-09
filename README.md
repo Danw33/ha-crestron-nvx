@@ -44,6 +44,21 @@ project's documentation, hardware-observation, and fixture rules.
 
 ## Project status
 
+### Optional Sync device clock button (unreleased)
+
+The disabled-by-default **Sync device clock** configuration button requests NTP
+sync using the device's existing settings. It is created only for the supported
+Ntp schema and is unavailable when NTP is disabled, no server is configured, or
+the optional clock read fails. Older Sntp-only schemas are not offered the button.
+After a firmware upgrade introduces support, reload the integration to create it.
+
+Clock capability reads add one read-only request per update. Failures do not
+hide monitoring entities. No server addresses or clock credentials are retained
+in the integration's capability metadata. Pressing the button leaves NTP servers,
+authentication, timezone and enablement unchanged. HA's button activity records
+the request, not verified synchronisation; check the device after an uncertain
+result rather than automatically retrying. Hardware testing remains pending.
+
 Version 0.7.0 adds opt-in local controls to the existing monitoring integration.
 Immediate discovery cards, configured-hostname duplicate filtering and consistent
 built-in port labels were validated with 0.6.0. Unknown alternate-interface

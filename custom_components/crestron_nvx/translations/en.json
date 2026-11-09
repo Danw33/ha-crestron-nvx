@@ -89,6 +89,9 @@
     "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "exceptions": {
+    "clock_sync_unavailable": {"message": "NTP sync is unavailable. Configure and enable NTP in the device web UI, then retry after the next update."},
+    "clock_sync_auth_failed": {"message": "Authentication failed while requesting clock sync. Reauthenticate the device before retrying."},
+    "clock_sync_failed": {"message": "Clock sync could not be confirmed. The request may have been accepted; check the device before retrying."},
     "stream_unavailable": {"message": "The primary stream is unavailable or busy, or the device mode changed. No stream command was sent."},
     "stream_unsupported": {"message": "The endpoint refused this primary stream command. Check the device mode and busy state; starting reception also requires a valid configured RTSP URL."},
     "stream_auth_failed": {"message": "Authentication failed. Reauthenticate the endpoint and check its stream status before retrying."},
@@ -115,6 +118,7 @@
   },
   "entity": {
     "button": {
+      "sync_clock": {"name": "Sync device clock"},
       "receive_stream_start": {"name": "Start receiving"},
       "receive_stream_stop": {"name": "Stop receiving"},
       "transmit_stream_start": {"name": "Start transmitting"},

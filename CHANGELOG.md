@@ -5,6 +5,12 @@ and uses semantic versioning for releases.
 
 ## [Unreleased]
 
+### Added
+
+- Opt-in Sync device clock configuration button for compatible, enabled NTP
+  configurations with an existing server. Optional clock-read failures do not
+  disrupt monitoring; no clock settings are changed and commands are not retried.
+
 ### Changed
 
 - Use the library's observed capabilities for controls and DM NVX family

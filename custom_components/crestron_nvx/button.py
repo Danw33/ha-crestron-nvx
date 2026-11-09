@@ -23,7 +23,9 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Register commands only for observed capabilities on supported models."""
-    entities: list[NvxRebootButton | NvxStreamButton] = []
+    entities: list[NvxRebootButton | NvxStreamButton | NvxClockSyncButton] = []
+    if entry.runtime_data.capabilities.ntp_sync:
+        entities.append(NvxClockSyncButton(entry.runtime_data))
     if entry.runtime_data.data.capabilities.reboot:
         entities.append(NvxRebootButton(entry.runtime_data))
     directions: tuple[Literal["receive", "transmit"], ...] = ("receive", "transmit")
@@ -35,6 +37,48 @@ async def async_setup_entry(
             )
     if entities:
         async_add_entities(entities)
+
+
+class NvxClockSyncButton(CrestronNvxEntity, ButtonEntity):
+    """Request NTP sync using existing settings; never infer clock accuracy."""
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_entity_registry_enabled_default = False
+    _attr_translation_key = "sync_clock"
+
+    def __init__(self, coordinator: CrestronNvxCoordinator) -> None:
+        super().__init__(coordinator, "sync_clock_control")
+
+    @property
+    @override
+    def available(self) -> bool:
+        return (
+            super().available
+            and self.coordinator.capabilities.ntp_sync
+            and self.coordinator.clock_info.can_sync
+        )
+
+    @override
+    async def async_press(self) -> None:
+        if not self.available:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="clock_sync_unavailable"
+            )
+        try:
+            await self.coordinator.async_sync_clock()
+        except NvxControlUnsupported as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="clock_sync_unavailable"
+            ) from err
+        except NvxAuthenticationError as err:
+            self.coordinator.config_entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="clock_sync_auth_failed"
+            ) from err
+        except NvxApiError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="clock_sync_failed"
+            ) from err
 
 
 class NvxRebootButton(CrestronNvxEntity, ButtonEntity):

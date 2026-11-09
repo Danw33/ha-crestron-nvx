@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from crestron_nvx import (
     NvxAuthenticationError,
+    NvxClockInfo,
     NvxControlError,
     NvxControlUnsupported,
     NvxPermissionError,
@@ -25,6 +26,7 @@ from .conftest import DEVICE_ID, SNAPSHOT
 
 def coordinator(hass, entry):
     client = MagicMock(
+        async_get_clock_info=AsyncMock(return_value=NvxClockInfo()),
         async_get_snapshot=AsyncMock(return_value=SNAPSHOT),
         async_get_preview_info=AsyncMock(return_value=NvxPreviewInfo()),
         async_set_leds_enabled=AsyncMock(

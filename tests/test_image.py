@@ -4,7 +4,12 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from crestron_nvx import NvxConnectionError, NvxPreviewImage, NvxPreviewInfo
+from crestron_nvx import (
+    NvxClockInfo,
+    NvxConnectionError,
+    NvxPreviewImage,
+    NvxPreviewInfo,
+)
 
 from custom_components.crestron_nvx.coordinator import CrestronNvxCoordinator
 from custom_components.crestron_nvx.image import (
@@ -77,6 +82,7 @@ async def test_image_cache_and_recovery(hass):
 @pytest.mark.parametrize("error", [NvxConnectionError(), None])
 async def test_optional_preview_cannot_break_status(hass, mock_config_entry, error):
     client = MagicMock(
+        async_get_clock_info=AsyncMock(return_value=NvxClockInfo()),
         async_get_snapshot=AsyncMock(return_value=SNAPSHOT),
         async_get_preview_info=AsyncMock(
             return_value=NvxPreviewInfo(True, False), side_effect=error

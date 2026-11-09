@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from crestron_nvx import (
     NvxAvPort,
+    NvxClockInfo,
     NvxDeviceInfo,
     NvxPreviewInfo,
     NvxSnapshot,
@@ -126,6 +127,10 @@ def mock_client() -> Generator[AsyncMock]:
     """Mock all endpoint I/O."""
 
     with (
+        patch(
+            "crestron_nvx.NvxClient.async_get_clock_info",
+            new=AsyncMock(return_value=NvxClockInfo()),
+        ),
         patch(
             "crestron_nvx.NvxClient.async_get_preview_info",
             new=AsyncMock(return_value=NvxPreviewInfo()),

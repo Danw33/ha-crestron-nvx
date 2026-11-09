@@ -13,7 +13,9 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from crestron_nvx import (
     NvxApiError,
     NvxAuthenticationError,
+    NvxCapabilities,
     NvxClient,
+    NvxClockInfo,
     NvxConnectionError,
     NvxControlError,
     NvxPreviewInfo,
@@ -51,7 +53,21 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
         )
         self.client = client
         self.preview_info = NvxPreviewInfo()
+        self.clock_info = NvxClockInfo()
         self._operation_lock = asyncio.Lock()
+
+    @property
+    def capabilities(self) -> NvxCapabilities:
+        """Combine monitoring with optional clock observations in the library."""
+        return NvxCapabilities.from_snapshot(self.data, clock_info=self.clock_info)
+
+    async def async_sync_clock(self) -> None:
+        """Serialize an explicit command; do not claim successful synchronisation."""
+        async with self._operation_lock:
+            await self.client.async_sync_clock(
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
 
     async def async_set_leds_enabled(self, enabled: bool) -> None:
         """Serialize actions with polling and publish only observed state."""
@@ -153,4 +169,8 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
             self.preview_info = await self.client.async_get_preview_info()
         except NvxApiError:
             self.preview_info = NvxPreviewInfo()
+        try:
+            self.clock_info = await self.client.async_get_clock_info()
+        except NvxApiError:
+            self.clock_info = NvxClockInfo()
         return snapshot

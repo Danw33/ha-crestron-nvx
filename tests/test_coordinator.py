@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from crestron_nvx import (
     NvxAuthenticationError,
+    NvxClockInfo,
     NvxConnectionError,
     NvxPreviewInfo,
     NvxResponseError,
@@ -25,6 +26,7 @@ async def test_update_success(
     """Return a typed snapshot from the client."""
 
     client = MagicMock(
+        async_get_clock_info=AsyncMock(return_value=NvxClockInfo()),
         async_get_snapshot=AsyncMock(return_value=SNAPSHOT),
         async_get_preview_info=AsyncMock(return_value=NvxPreviewInfo()),
     )
@@ -50,7 +52,8 @@ async def test_update_auth_failure(
     """Start reauthentication when a session cannot authenticate."""
 
     client = MagicMock(
-        async_get_snapshot=AsyncMock(side_effect=NvxAuthenticationError())
+        async_get_clock_info=AsyncMock(return_value=NvxClockInfo()),
+        async_get_snapshot=AsyncMock(side_effect=NvxAuthenticationError()),
     )
     coordinator = CrestronNvxCoordinator(hass, mock_config_entry, client)
     with pytest.raises(ConfigEntryAuthFailed):

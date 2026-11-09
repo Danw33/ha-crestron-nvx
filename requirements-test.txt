@@ -1,6 +1,6 @@
 homeassistant==2026.11.1
 # Development checkpoint; replace with a PyPI pin alongside manifest/audit pins at release.
-crestron-nvx @ git+https://github.com/Danw33/py-crestron-nvx.git@2d93f5627ef393181b58bed5c5b9b84fe604c53b
+crestron-nvx @ git+https://github.com/Danw33/py-crestron-nvx.git@bfeb73f9a4aee4ba20ca5e8121d33dacf639084b
 pytest-cov==7.1.0
 # Owns the matching pytest and pytest-asyncio pins.
 pytest-homeassistant==2026.11.1
