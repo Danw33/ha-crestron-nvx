@@ -5,4 +5,4 @@ pytest-cov==7.1.0
 # Owns the matching pytest and pytest-asyncio pins.
 pytest-homeassistant==2026.11.0
 ruff==0.16.8
-mypy==2.3.1
+mypy==2.4.1
