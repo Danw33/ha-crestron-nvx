@@ -7,6 +7,11 @@ and uses semantic versioning for releases.
 
 ### Added
 
+- Opt-in per-output Power On, Power Off and configured Input Control buttons,
+  using existing CEC/Serial/IR command settings. Shared library capabilities,
+  stable output/action IDs and isolated optional-read failures; no inferred
+  TV state or automatic commands.
+
 - Opt-in Sync device clock configuration button for compatible, enabled NTP
   configurations with an existing server. Optional clock-read failures do not
   disrupt monitoring; no clock settings are changed and commands are not retried.

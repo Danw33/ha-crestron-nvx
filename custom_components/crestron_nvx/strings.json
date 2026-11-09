@@ -89,6 +89,9 @@
     "discovered_device": {"options": {"manual": "Enter host manually"}}
   },
   "exceptions": {
+    "display_command_unavailable": {"message": "This display command is unavailable or no longer configured. Check the output association and command settings in the device web UI."},
+    "display_command_auth_failed": {"message": "Authentication failed. Reauthenticate the endpoint before retrying the display command."},
+    "display_command_failed": {"message": "The display command failed or its outcome is uncertain. Check the display before retrying; the command may already have been sent."},
     "clock_sync_unavailable": {"message": "NTP sync is unavailable. Configure and enable NTP in the device web UI, then retry after the next update."},
     "clock_sync_auth_failed": {"message": "Authentication failed while requesting clock sync. Reauthenticate the device before retrying."},
     "clock_sync_failed": {"message": "Clock sync could not be confirmed. The request may have been accepted; check the device before retrying."},
@@ -118,6 +121,9 @@
   },
   "entity": {
     "button": {
+      "display_power_on": {"name": "{output} device power on"},
+      "display_power_off": {"name": "{output} device power off"},
+      "display_input_control": {"name": "{output} device input control"},
       "sync_clock": {"name": "Sync device clock"},
       "receive_stream_start": {"name": "Start receiving"},
       "receive_stream_stop": {"name": "Stop receiving"},

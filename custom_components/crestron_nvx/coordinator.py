@@ -18,6 +18,7 @@ from crestron_nvx import (
     NvxClockInfo,
     NvxConnectionError,
     NvxControlError,
+    NvxDisplayCommand,
     NvxPreviewInfo,
     NvxResponseError,
     NvxSnapshot,
@@ -54,12 +55,27 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
         self.client = client
         self.preview_info = NvxPreviewInfo()
         self.clock_info = NvxClockInfo()
+        self.display_commands: tuple[NvxDisplayCommand, ...] = ()
         self._operation_lock = asyncio.Lock()
 
     @property
     def capabilities(self) -> NvxCapabilities:
         """Combine monitoring with optional clock observations in the library."""
-        return NvxCapabilities.from_snapshot(self.data, clock_info=self.clock_info)
+        return NvxCapabilities.from_snapshot(
+            self.data,
+            clock_info=self.clock_info,
+            display_commands=self.display_commands,
+        )
+
+    async def async_send_display_command(self, output_id: str, action: str) -> None:
+        """Serialize explicit display commands without claiming display state."""
+        async with self._operation_lock:
+            await self.client.async_send_display_command(
+                output_id,
+                action,
+                expected_device_id=self.config_entry.unique_id
+                or self.data.device.device_id,
+            )
 
     async def async_sync_clock(self) -> None:
         """Serialize an explicit command; do not claim successful synchronisation."""
@@ -173,4 +189,8 @@ class CrestronNvxCoordinator(DataUpdateCoordinator[NvxSnapshot]):
             self.clock_info = await self.client.async_get_clock_info()
         except NvxApiError:
             self.clock_info = NvxClockInfo()
+        try:
+            self.display_commands = await self.client.async_get_display_commands()
+        except NvxApiError:
+            self.display_commands = ()
         return snapshot

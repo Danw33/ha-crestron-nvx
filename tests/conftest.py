@@ -128,6 +128,10 @@ def mock_client() -> Generator[AsyncMock]:
 
     with (
         patch(
+            "crestron_nvx.NvxClient.async_get_display_commands",
+            new=AsyncMock(return_value=()),
+        ),
+        patch(
             "crestron_nvx.NvxClient.async_get_clock_info",
             new=AsyncMock(return_value=NvxClockInfo()),
         ),

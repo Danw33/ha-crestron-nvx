@@ -26,6 +26,7 @@ from .conftest import DEVICE_ID, SNAPSHOT
 
 def coordinator(hass, entry):
     client = MagicMock(
+        async_get_display_commands=AsyncMock(return_value=()),
         async_get_clock_info=AsyncMock(return_value=NvxClockInfo()),
         async_get_snapshot=AsyncMock(return_value=SNAPSHOT),
         async_get_preview_info=AsyncMock(return_value=NvxPreviewInfo()),

@@ -44,6 +44,32 @@ project's documentation, hardware-observation, and fixture rules.
 
 ## Project status
 
+### Configured display-command buttons (unreleased)
+
+Eligible outputs expose disabled-by-default operational buttons named
+**Output 1 device power on**, **Output 1 device power off** and, when configured
+and enabled, **Output 1 device input control**. They invoke the output's current
+CEC, serial or IR commands configured in the NVX web UI. They are buttons, not
+switches reporting TV power state, and can be used in HA automations.
+
+The output association must be enabled and its supported port/command must have
+nonempty, recognised configuration. Empty IR/serial templates do not create
+buttons. Missing or unsupported API objects do not affect normal monitoring.
+Reload the integration after configuring a previously unavailable command to
+create its button; existing buttons become unavailable if configuration disappears.
+Entity IDs remain stable when an output changes its configured control interface.
+
+The library rechecks identity and resolves the configured command before each
+press. Only the command's Test flag is sent: no automatic-power, command-string,
+association or serial/IR settings are changed. Existing automatic display power
+may later override the action. Outputs sharing a control port may affect the
+same display. Acknowledgement does not confirm the display state; do not
+automatically retry an uncertain outcome.
+
+Discovery adds one optional GET per update. Command strings are not retained in
+HA metadata, attributes or diagnostics. These controls require the matching
+unreleased library checkout for private ZIP testing; hardware validation is pending.
+
 ### Optional Sync device clock button (unreleased)
 
 The disabled-by-default **Sync device clock** configuration button requests NTP

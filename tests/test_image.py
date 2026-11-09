@@ -82,6 +82,7 @@ async def test_image_cache_and_recovery(hass):
 @pytest.mark.parametrize("error", [NvxConnectionError(), None])
 async def test_optional_preview_cannot_break_status(hass, mock_config_entry, error):
     client = MagicMock(
+        async_get_display_commands=AsyncMock(return_value=()),
         async_get_clock_info=AsyncMock(return_value=NvxClockInfo()),
         async_get_snapshot=AsyncMock(return_value=SNAPSHOT),
         async_get_preview_info=AsyncMock(

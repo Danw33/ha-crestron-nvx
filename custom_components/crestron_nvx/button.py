@@ -8,7 +8,12 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
-from crestron_nvx import NvxApiError, NvxAuthenticationError, NvxControlUnsupported
+from crestron_nvx import (
+    NvxApiError,
+    NvxAuthenticationError,
+    NvxControlUnsupported,
+    NvxDisplayCommand,
+)
 
 from .const import DOMAIN
 from .coordinator import CrestronNvxConfigEntry, CrestronNvxCoordinator
@@ -23,7 +28,13 @@ async def async_setup_entry(
     async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Register commands only for observed capabilities on supported models."""
-    entities: list[NvxRebootButton | NvxStreamButton | NvxClockSyncButton] = []
+    entities: list[
+        NvxRebootButton | NvxStreamButton | NvxClockSyncButton | NvxDisplayCommandButton
+    ] = []
+    entities.extend(
+        NvxDisplayCommandButton(entry.runtime_data, command)
+        for command in entry.runtime_data.capabilities.display_commands
+    )
     if entry.runtime_data.capabilities.ntp_sync:
         entities.append(NvxClockSyncButton(entry.runtime_data))
     if entry.runtime_data.data.capabilities.reboot:
@@ -37,6 +48,62 @@ async def async_setup_entry(
             )
     if entities:
         async_add_entities(entities)
+
+
+class NvxDisplayCommandButton(CrestronNvxEntity, ButtonEntity):
+    """Execute a configured display action, not a switch with inferred TV state."""
+
+    _attr_entity_registry_enabled_default = False
+
+    def __init__(
+        self, coordinator: CrestronNvxCoordinator, command: NvxDisplayCommand
+    ) -> None:
+        self._output_id = command.output_id
+        self._action = command.action
+        action_key = {
+            "PowerOn": "power_on",
+            "PowerOff": "power_off",
+            "InputControl": "input_control",
+        }[command.action]
+        self._attr_translation_key = f"display_{action_key}"
+        self._attr_translation_placeholders = {
+            "output": f"Output {command.output_id[6:]}"
+        }
+        super().__init__(
+            coordinator, f"{command.output_id.lower()}_display_{action_key}"
+        )
+
+    @property
+    @override
+    def available(self) -> bool:
+        return super().available and any(
+            command.output_id == self._output_id and command.action == self._action
+            for command in self.coordinator.capabilities.display_commands
+        )
+
+    @override
+    async def async_press(self) -> None:
+        if not self.available:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="display_command_unavailable"
+            )
+        try:
+            await self.coordinator.async_send_display_command(
+                self._output_id, self._action
+            )
+        except NvxControlUnsupported as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN, translation_key="display_command_unavailable"
+            ) from err
+        except NvxAuthenticationError as err:
+            self.coordinator.config_entry.async_start_reauth(self.hass)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="display_command_auth_failed"
+            ) from err
+        except NvxApiError as err:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN, translation_key="display_command_failed"
+            ) from err
 
 
 class NvxClockSyncButton(CrestronNvxEntity, ButtonEntity):
