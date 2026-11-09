@@ -8,7 +8,7 @@ Use Python 3.14, create a virtual environment, and install
 `requirements-test.txt`.
 
 Upgrade `homeassistant` and `pytest-homeassistant` together. The official test
-package supplies the compatible pytest and pytest-asyncio pins for HA 2026.11.0.
+package supplies the compatible pytest and pytest-asyncio pins for HA 2026.11.1.
 
 Before opening a pull request, run:
 
