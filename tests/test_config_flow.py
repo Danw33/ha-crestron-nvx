@@ -13,7 +13,7 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResultType
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.crestron_nvx.config_flow import _async_validate_input
 from custom_components.crestron_nvx.const import CONF_VERIFY_SSL, DOMAIN
