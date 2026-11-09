@@ -13,11 +13,9 @@ from crestron_nvx import (
 )
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
 from homeassistant.core import HomeAssistant
-from pytest_homeassistant_custom_component.common import MockConfigEntry
+from pytest_homeassistant.common import MockConfigEntry
 
 from custom_components.crestron_nvx.const import CONF_VERIFY_SSL, DOMAIN
-
-pytest_plugins = "pytest_homeassistant_custom_component"
 
 
 @pytest.fixture(autouse=True)
@@ -107,13 +105,6 @@ SNAPSHOT = NvxSnapshot(
     ),
     raw_device_specific={"DeviceMode": "Receiver", "DeviceReady": True},
 )
-
-
-@pytest.fixture(autouse=True)
-def auto_enable_custom_integrations(
-    enable_custom_integrations: None,
-) -> None:
-    """Enable custom integrations for every test."""
 
 
 @pytest.fixture

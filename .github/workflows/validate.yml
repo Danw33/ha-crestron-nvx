@@ -28,3 +28,4 @@ jobs:
           REPOSITORY_REF: ${{ github.event.pull_request.head.sha || github.sha }}
         with:
           category: integration
+          comment: false
