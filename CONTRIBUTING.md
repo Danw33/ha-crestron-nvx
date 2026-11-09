@@ -5,7 +5,12 @@ Thank you for helping build reliable local DM NVX support for Home Assistant!
 ## Development
 
 Use Python 3.14, create a virtual environment, and install
-`requirements-test.txt`. Before opening a pull request, run:
+`requirements-test.txt`.
+
+Upgrade `homeassistant` and `pytest-homeassistant` together. The official test
+package supplies the compatible pytest and pytest-asyncio pins for HA 2026.11.0.
+
+Before opening a pull request, run:
 
 ```console
 ruff format --check .

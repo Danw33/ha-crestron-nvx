@@ -4,7 +4,7 @@ import logging
 from ipaddress import IPv4Address
 from typing import Any, override
 
-import voluptuous as vol
+import probatio
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_PASSWORD, CONF_USERNAME
@@ -68,22 +68,22 @@ async def _async_validate_input(
 
 def _schema(
     defaults: dict[str, Any] | None = None, *, include_host: bool = True
-) -> vol.Schema:
+) -> probatio.Schema:
     """Build the endpoint schema."""
 
     values = defaults or {}
-    schema = vol.Schema(
+    schema = probatio.Schema(
         {
-            vol.Required(CONF_HOST, default=values.get(CONF_HOST)): TextSelector(
+            probatio.Required(CONF_HOST, default=values.get(CONF_HOST)): TextSelector(
                 TextSelectorConfig(type=TextSelectorType.TEXT)
             ),
-            vol.Required(
+            probatio.Required(
                 CONF_USERNAME, default=values.get(CONF_USERNAME, "admin")
             ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
-            vol.Required(CONF_PASSWORD): TextSelector(
+            probatio.Required(CONF_PASSWORD): TextSelector(
                 TextSelectorConfig(type=TextSelectorType.PASSWORD)
             ),
-            vol.Required(
+            probatio.Required(
                 CONF_VERIFY_SSL,
                 default=values.get(CONF_VERIFY_SSL, DEFAULT_VERIFY_SSL),
             ): BooleanSelector(),
@@ -91,7 +91,7 @@ def _schema(
     )
     if not include_host:
         del schema.schema[CONF_HOST]
-        schema = vol.Schema(schema.schema)
+        schema = probatio.Schema(schema.schema)
     return schema
 
 
@@ -146,9 +146,9 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                     errors["base"] = "no_devices"
         return self.async_show_form(
             step_id="scan",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Optional(
+                    probatio.Optional(
                         "target", default=(user_input or {}).get("target", "")
                     ): str
                 }
@@ -180,9 +180,9 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
         options.append({"value": "manual", "label": "manual"})
         return self.async_show_form(
             step_id="select_device",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(CONF_HOST): SelectSelector(
+                    probatio.Required(CONF_HOST): SelectSelector(
                         SelectSelectorConfig(
                             options=options,
                             mode=SelectSelectorMode.DROPDOWN,
@@ -386,13 +386,13 @@ class CrestronNvxConfigFlow(ConfigFlow, domain=DOMAIN):
                 )
         return self.async_show_form(
             step_id="reauth_confirm",
-            data_schema=vol.Schema(
+            data_schema=probatio.Schema(
                 {
-                    vol.Required(
+                    probatio.Required(
                         CONF_USERNAME,
                         default=entry.data[CONF_USERNAME],
                     ): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
-                    vol.Required(CONF_PASSWORD): TextSelector(
+                    probatio.Required(CONF_PASSWORD): TextSelector(
                         TextSelectorConfig(type=TextSelectorType.PASSWORD)
                     ),
                 }
